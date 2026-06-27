@@ -1,0 +1,57 @@
+---
+description: TypeScript strict typing and Zod validation standards
+globs: **/*.ts,**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript Rules
+
+Read `docs/14_CODING_STANDARDS.md` and `docs/09_API_STRATEGY.md`.
+
+## Strict Mode
+
+- `strict: true` always
+- **No `any`** — use `unknown` and narrow
+- No `@ts-ignore` — use `@ts-expect-error` with explanation if unavoidable
+- No non-null assertions (`!`) unless immediately preceded by null check
+
+## Types
+
+- DB types from `src/types/database.ts` (Supabase generated)
+- Infer form/action types from Zod: `z.infer<typeof schema>`
+- Shared action result: `ActionResult<T>` from `src/types/actions.ts`
+- Prefer `interface` for objects; `type` for unions
+
+## Zod
+
+- All schemas in `src/lib/validations/{domain}.ts`
+- Share schemas between React Hook Form and Server Actions
+- Parse Server Action input: `schema.safeParse(input)` — handle failure explicitly
+- Use `.trim()` on user strings; `.uuid()` for IDs
+
+## Naming
+
+- Components: PascalCase
+- Functions/variables: camelCase
+- Files: kebab-case
+- Constants: SCREAMING_SNAKE_CASE
+
+## Imports
+
+- Use `@/` alias for src imports
+- Order: React/Next → external → `@/components` → `@/features` → `@/lib` → `@/types`
+- Named exports preferred over default (except Next.js pages)
+
+## Functions
+
+- Explicit return types on exported functions and Server Actions
+- Async Server Actions return `Promise<ActionResult<T>>`
+
+## Forbidden
+
+```typescript
+// BAD
+const data: any = await fetch(...);
+// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+```

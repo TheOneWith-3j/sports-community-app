@@ -1,0 +1,1464 @@
+# Implementation Plan
+
+## Related Documents
+
+- [Requirements](./02_REQUIREMENTS.md)
+- [User Stories](./03_USER_STORIES.md)
+- [System Architecture](./04_SYSTEM_ARCHITECTURE.md)
+- [Database Design](./05_DATABASE_DESIGN.md)
+- [RBAC](./06_RBAC.md)
+- [Authentication](./07_AUTHENTICATION.md)
+- [API Strategy](./09_API_STRATEGY.md)
+- [UI System](./10_UI_SYSTEM.md)
+- [Component Library](./11_COMPONENT_LIBRARY.md)
+- [Testing](./12_TESTING.md)
+- [Deployment](./13_DEPLOYMENT.md)
+- [AI Development Guide](./15_AI_DEVELOPMENT_GUIDE.md)
+
+---
+
+## Overview
+
+Milestone-driven implementation plan from empty repository to MVP launch. Each milestone (M0–M18) produces a **working application increment**. Implement sequentially — do not skip milestones.
+
+**Progress tracking:** Mark milestones complete in this section as implemented.
+
+| Milestone | Name | Status |
+|-----------|------|--------|
+| M0 | Repository and Tooling Setup | Not started |
+| M1 | Supabase Project and Environment | Not started |
+| M2 | Database Schema and RLS | Not started |
+| M3 | Authentication — Google Login | Not started |
+| M4 | User Profile | Not started |
+| M5 | Community Creation | Not started |
+| M6 | Event CRUD | Not started |
+| M7 | Public Event Page | Not started |
+| M8 | Join Event (FCFS) | Not started |
+| M9 | Waitlist | Not started |
+| M10 | Leave and Auto-Promotion | Not started |
+| M11 | Participant List | Not started |
+| M12 | Attendance Management | Not started |
+| M13 | Admin Dashboard | Not started |
+| M14 | RBAC Hardening | Not started |
+| M15 | Dark Mode and Polish | Not started |
+| M16 | Testing Foundation | Not started |
+| M17 | Deployment | Not started |
+| M18 | MVP QA and Launch Prep | Not started |
+
+---
+
+## M0: Repository and Tooling Setup
+
+### Objective
+
+Initialize Next.js project with TypeScript, Tailwind, ESLint, Prettier, shadcn/ui foundation, and folder structure. Application runs locally with a minimal marketing landing page (app name and tagline only).
+
+### Features
+
+- pnpm project initialization
+- Next.js App Router (latest stable)
+- TypeScript strict mode
+- Tailwind CSS configured with design token CSS variables skeleton
+- ESLint + Prettier
+- shadcn/ui init (Button, Card minimum)
+- Folder structure per [System Architecture](./04_SYSTEM_ARCHITECTURE.md)
+- Root layout with Geist font
+
+### Files Expected
+
+```
+package.json
+pnpm-lock.yaml
+next.config.ts
+tsconfig.json
+tailwind.config.ts
+postcss.config.mjs
+.eslintrc.json (or eslint.config.mjs)
+.prettierrc
+.gitignore
+.env.example
+src/app/layout.tsx
+src/app/page.tsx
+src/app/globals.css
+src/lib/utils.ts
+components.json (shadcn)
+src/components/ui/button.tsx
+src/components/ui/card.tsx
+```
+
+### Acceptance Criteria
+
+- [ ] `pnpm dev` starts without errors on localhost:3000
+- [ ] Landing page renders with app name and brief tagline
+- [ ] `pnpm lint` passes
+- [ ] `pnpm typecheck` passes (script added to package.json)
+- [ ] Tailwind classes work; CSS variables defined for theme skeleton
+- [ ] `@/` import alias works
+
+### Manual Test Checklist
+
+- [ ] Open http://localhost:3000 — page loads
+- [ ] Hot reload works on file change
+- [ ] No console errors in browser
+
+### Definition of Done
+
+All acceptance criteria met. No feature code beyond landing page. `.env.example` documents required vars (values empty).
+
+### Suggested Git Commit Message
+
+```
+chore: initialize Next.js project with tooling and folder structure (M0)
+```
+
+### Estimated Difficulty
+
+2 / 5
+
+### Estimated Time
+
+2–4 hours
+
+### Potential Risks
+
+- shadcn/ui version mismatch with Tailwind v4 — pin compatible versions in docs if issue arises
+- Windows path issues with pnpm — use forward slashes in imports
+
+### Future Improvements
+
+- Add Husky pre-commit hooks for lint (M17)
+- Add commitlint for conventional commits
+
+---
+
+## M1: Supabase Project and Environment
+
+### Objective
+
+Connect local development to Supabase (local CLI or cloud project). Environment validation and Supabase client utilities in place.
+
+### Features
+
+- Supabase CLI initialized (`supabase init`)
+- Local Supabase or cloud project linked
+- Environment variables in `.env.local`
+- Supabase browser, server, and middleware clients
+- Env validation with Zod (`src/lib/env.ts`)
+- Placeholder middleware for session refresh
+
+### Files Expected
+
+```
+supabase/config.toml
+src/lib/env.ts
+src/lib/supabase/client.ts
+src/lib/supabase/server.ts
+src/lib/supabase/middleware.ts
+middleware.ts
+.env.example (updated with real key placeholders)
+```
+
+### Acceptance Criteria
+
+- [ ] `supabase start` runs (or cloud project connected)
+- [ ] Env validation fails loudly if vars missing in production build
+- [ ] Server client creates without error in test Server Component
+- [ ] Middleware runs on matched routes without error
+- [ ] `.env.local` gitignored
+
+### Manual Test Checklist
+
+- [ ] App starts with valid `.env.local`
+- [ ] App shows clear error or fails build with missing env vars
+- [ ] Supabase Dashboard shows project (if cloud)
+
+### Definition of Done
+
+Supabase clients wired. No auth UI yet. Middleware refreshes session passively.
+
+### Suggested Git Commit Message
+
+```
+feat: add Supabase client setup and environment validation (M1)
+```
+
+### Estimated Difficulty
+
+2 / 5
+
+### Estimated Time
+
+2–3 hours
+
+### Potential Risks
+
+- Cookie issues in local dev — follow `@supabase/ssr` Next.js App Router guide exactly
+- Forgetting to add middleware matcher — session won't refresh
+
+### Future Improvements
+
+- Separate staging Supabase project (M17)
+
+---
+
+## M2: Database Schema and RLS
+
+### Objective
+
+Deploy full PostgreSQL schema, enums, helper functions, join/leave RPC stubs, RLS policies, triggers, and seed data.
+
+### Features
+
+- All tables from [Database Design](./05_DATABASE_DESIGN.md)
+- Enums: platform_role, community_role, event_status, participant_status, attendance_status
+- Helper functions: is_super_admin, is_community_admin, is_community_member
+- RPC: join_event, leave_event, promote_waitlisted, remove_participant
+- RLS policies from [RBAC](./06_RBAC.md)
+- Triggers: updated_at, handle_new_user on auth.users
+- Seed activity_types
+- Generate TypeScript types
+
+### Files Expected
+
+```
+supabase/migrations/20260101000000_initial_schema.sql
+supabase/migrations/20260101000001_rls_policies.sql
+supabase/migrations/20260101000002_rpc_functions.sql
+supabase/seed.sql
+src/types/database.ts
+```
+
+### Acceptance Criteria
+
+- [ ] `supabase db reset` applies all migrations and seed without error
+- [ ] All tables exist with correct columns and indexes
+- [ ] RLS enabled on all tables
+- [ ] activity_types seeded with badminton, pickleball, general
+- [ ] New auth user trigger creates profiles row
+- [ ] join_event RPC callable (test via SQL editor with test user)
+- [ ] TypeScript types generated
+
+### Manual Test Checklist
+
+- [ ] Supabase Table Editor shows all tables
+- [ ] Anonymous SELECT on published event works (after test data inserted manually)
+- [ ] Direct INSERT to event_participants blocked for authenticated user
+- [ ] join_event returns confirmed for first joiner on test event
+
+### Definition of Done
+
+Schema matches Database Design doc. RLS policies match RBAC doc. RPC functions implement FCFS logic.
+
+### Suggested Git Commit Message
+
+```
+feat: add database schema, RLS policies, and join/leave RPC functions (M2)
+```
+
+### Estimated Difficulty
+
+5 / 5
+
+### Estimated Time
+
+6–10 hours
+
+### Potential Risks
+
+- RLS policy recursion — use SECURITY DEFINER helpers carefully
+- Race conditions in join_event — ensure FOR UPDATE locking
+- Migration ordering — functions after tables
+
+### Future Improvements
+
+- SQL unit tests for RPC functions
+- Audit log trigger automation
+
+---
+
+## M3: Authentication — Google Login
+
+### Objective
+
+Users can sign in and sign out with Google. Protected routes redirect unauthenticated users. Session persists.
+
+### Features
+
+- Login page with "Continue with Google"
+- OAuth callback route
+- signInWithGoogle and signOut Server Actions
+- Middleware protects `/dashboard/**`
+- Redirect authenticated users from `/login`
+- Return URL (`next` param) support
+
+### Files Expected
+
+```
+src/app/(auth)/login/page.tsx
+src/app/(auth)/auth/callback/route.ts
+src/features/auth/actions.ts
+src/features/auth/queries.ts (getCurrentUser)
+src/app/(dashboard)/layout.tsx
+src/app/(dashboard)/page.tsx (placeholder dashboard)
+middleware.ts (updated matchers)
+```
+
+### Acceptance Criteria
+
+- [ ] Google sign-in completes and creates session
+- [ ] Profile row exists after first sign-in (trigger)
+- [ ] `/dashboard` inaccessible without auth
+- [ ] Sign out clears session
+- [ ] Login redirects to `next` param when safe
+- [ ] Authenticated user visiting `/login` redirects to dashboard
+
+### Manual Test Checklist
+
+- [ ] Sign in with Google on localhost
+- [ ] Refresh page — still authenticated
+- [ ] Sign out — redirected to login
+- [ ] Visit /dashboard unauthenticated — redirected to login
+- [ ] Login with ?next=/dashboard/settings — lands on settings
+
+### Definition of Done
+
+Full auth flow works per [Authentication](./07_AUTHENTICATION.md). Dashboard shell exists.
+
+### Suggested Git Commit Message
+
+```
+feat: implement Google OAuth sign-in and protected routes (M3)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+4–6 hours
+
+### Potential Risks
+
+- Google OAuth redirect URI mismatch — double-check Supabase and Google Console URLs
+- Cookie not set on callback — verify `@supabase/ssr` cookie handling
+
+### Future Improvements
+
+- Phone OTP (post-MVP)
+- Account linking
+
+---
+
+## M4: User Profile
+
+### Objective
+
+Users view and edit profile. Onboarding flow for new users to confirm display name.
+
+### Features
+
+- getCurrentProfile query
+- updateProfile Server Action with Zod validation
+- Profile settings page
+- Onboarding page for new users (redirect if display name default)
+- Avatar URL field (upload deferred to Storage setup or URL input for MVP)
+
+### Files Expected
+
+```
+src/lib/validations/profile.ts
+src/features/auth/actions.ts (updateProfile)
+src/features/auth/queries.ts (getCurrentProfile)
+src/features/auth/components/profile-form.tsx
+src/app/(dashboard)/settings/page.tsx
+src/app/onboarding/page.tsx
+```
+
+### Acceptance Criteria
+
+- [ ] User can view profile on settings page
+- [ ] User can update display name and phone
+- [ ] Validation errors show inline
+- [ ] New user redirected to onboarding once
+- [ ] Profile changes reflect in database
+
+### Manual Test Checklist
+
+- [ ] First sign-in redirects to onboarding
+- [ ] Save display name — appears in settings
+- [ ] Invalid phone format rejected
+- [ ] Skip onboarding not possible without valid name
+
+### Definition of Done
+
+Profile CRUD complete. FR-PROFILE requirements met.
+
+### Suggested Git Commit Message
+
+```
+feat: add user profile settings and onboarding flow (M4)
+```
+
+### Estimated Difficulty
+
+2 / 5
+
+### Estimated Time
+
+3–5 hours
+
+### Potential Risks
+
+- Onboarding redirect loop — check condition carefully
+- Avatar upload complexity — use URL input for MVP if Storage not ready
+
+### Future Improvements
+
+- Supabase Storage avatar upload
+- Profile photo crop
+
+---
+
+## M5: Community Creation
+
+### Objective
+
+Admin creates and manages one community. MVP enforces one community per admin.
+
+### Features
+
+- createCommunity and updateCommunity actions
+- Community creation onboarding step (after profile)
+- Community settings page
+- Auto-add creator as community admin in community_members
+- Slug generation from name
+- Activity type select (from seed data)
+
+### Files Expected
+
+```
+src/lib/validations/community.ts
+src/features/communities/actions.ts
+src/features/communities/queries.ts
+src/features/communities/components/community-form.tsx
+src/app/(dashboard)/community/page.tsx
+src/app/(dashboard)/community/setup/page.tsx
+```
+
+### Acceptance Criteria
+
+- [ ] Admin creates community with name, slug, description, activity type
+- [ ] Creator assigned admin role in community_members
+- [ ] MVP blocks second community creation for same user
+- [ ] Admin can edit community settings
+- [ ] Non-admin cannot access community settings
+
+### Manual Test Checklist
+
+- [ ] Create badminton community — success
+- [ ] Creator appears as admin member
+- [ ] Edit description — saved
+- [ ] Attempt second community — rejected with message
+- [ ] Duplicate slug rejected
+
+### Definition of Done
+
+Community module complete. FR-COMMUNITY MVP requirements met.
+
+### Suggested Git Commit Message
+
+```
+feat: add community creation and settings (M5)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+4–6 hours
+
+### Potential Risks
+
+- User without community accessing dashboard — redirect to community setup
+- Slug uniqueness with soft deletes — partial index handles this
+
+### Future Improvements
+
+- Multiple communities per admin (Phase 2)
+
+---
+
+## M6: Event CRUD
+
+### Objective
+
+Admin creates, edits, publishes, and cancels events. Share slug generated. Event list in dashboard.
+
+### Features
+
+- createEvent, updateEvent, publishEvent, cancelEvent actions
+- Event form with React Hook Form + Zod
+- Event list page (dashboard)
+- Event detail page (admin view)
+- share_slug generation (nanoid 8 chars)
+- Copy share link button
+- Event statuses: draft, published, cancelled
+
+### Files Expected
+
+```
+src/lib/validations/event.ts
+src/lib/utils/slug.ts (generateShareSlug)
+src/features/events/actions.ts
+src/features/events/queries.ts
+src/features/events/components/event-form.tsx
+src/components/domain/event-card.tsx
+src/app/(dashboard)/events/page.tsx
+src/app/(dashboard)/events/new/page.tsx
+src/app/(dashboard)/events/[id]/page.tsx
+```
+
+### Acceptance Criteria
+
+- [ ] Admin creates event with all required fields
+- [ ] Event saved as draft or published
+- [ ] share_slug unique and URL-safe
+- [ ] Admin edits event before start
+- [ ] Admin cancels event with confirmation
+- [ ] Copy link produces `{APP_URL}/e/{slug}`
+- [ ] Member cannot create events
+
+### Manual Test Checklist
+
+- [ ] Create draft event — not public
+- [ ] Publish event — status published
+- [ ] Copy share link — correct format
+- [ ] Edit title — saved
+- [ ] Cancel event — status cancelled
+- [ ] End before start validation fails
+
+### Definition of Done
+
+Event CRUD complete. FR-EVENT requirements met except public page (M7).
+
+### Suggested Git Commit Message
+
+```
+feat: add event CRUD with share slug generation (M6)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+5–8 hours
+
+### Potential Risks
+
+- Timezone handling — store UTC, display local
+- nanoid collision — retry on unique constraint violation
+
+### Future Improvements
+
+- Recurring events series
+- Event templates
+
+---
+
+## M7: Public Event Page
+
+### Objective
+
+Mobile-first public event page accessible via share link without authentication.
+
+### Features
+
+- Route `/e/[slug]`
+- getEventBySlug query with confirmed count
+- Event header: title, date, location, capacity bar
+- Participant count display
+- Join button UI shell (wired to joinEvent action in M8)
+- Published events only; 404 for draft/deleted
+- SEO metadata (generateMetadata)
+- Public layout (minimal nav)
+
+### Files Expected
+
+```
+src/app/(public)/e/[slug]/page.tsx
+src/app/(public)/layout.tsx
+src/features/events/queries.ts (getEventBySlug, getEventWithCounts)
+src/features/events/components/event-header.tsx
+src/features/events/components/capacity-bar.tsx
+src/components/layout/navbar.tsx (public variant)
+```
+
+### Acceptance Criteria
+
+- [ ] `/e/{slug}` loads without auth for published events
+- [ ] Shows title, schedule, location, capacity, confirmed count
+- [ ] Draft/cancelled/deleted events return 404 or appropriate message
+- [ ] Mobile layout works at 375px
+- [ ] Page has meaningful title in browser tab
+
+### Manual Test Checklist
+
+- [ ] Open share link incognito — event details visible
+- [ ] Cancelled event shows cancelled state
+- [ ] Invalid slug — 404 page
+- [ ] Capacity bar shows correct fraction
+
+### Definition of Done
+
+Public event page complete. US-EVENT-03 satisfied.
+
+### Suggested Git Commit Message
+
+```
+feat: add mobile-first public event page via share slug (M7)
+```
+
+### Estimated Difficulty
+
+2 / 5
+
+### Estimated Time
+
+3–5 hours
+
+### Potential Risks
+
+- RLS blocking public SELECT — verify events_public_select policy
+- Date formatting locale — use consistent formatter utility
+
+### Future Improvements
+
+- Open Graph tags for WhatsApp previews (Phase 1)
+
+---
+
+## M8: Join Event (FCFS)
+
+### Objective
+
+Authenticated community members join published events. FCFS confirmed status until capacity.
+
+### Features
+
+- joinEvent Server Action calling join_event RPC
+- JoinEventButton client component with loading state
+- Auto-add user to community_members on first join (if not member)
+- Guest redirected to login with return URL
+- Display user's participation status (confirmed)
+- revalidatePath on join
+
+### Files Expected
+
+```
+src/features/participants/actions.ts (joinEvent)
+src/features/participants/queries.ts (getUserParticipation)
+src/features/participants/components/join-event-button.tsx
+src/app/(public)/e/[slug]/page.tsx (updated)
+src/lib/validations/participant.ts
+```
+
+### Acceptance Criteria
+
+- [ ] Authenticated member joins — status confirmed
+- [ ] Confirmed count increments
+- [ ] Guest tap join — redirect to login with return URL
+- [ ] Cannot join draft/cancelled/past events
+- [ ] Cannot join twice (conflict error)
+- [ ] Concurrent joins respect capacity (RPC atomicity)
+
+### Manual Test Checklist
+
+- [ ] Join as member — confirmed
+- [ ] Join as guest — login prompt
+- [ ] Join after login from return URL — works
+- [ ] Second join attempt — error message
+- [ ] Join published event — success
+
+### Definition of Done
+
+FCFS join works for spots below capacity. FR-JOIN-01, FR-JOIN-02, FR-JOIN-06 met.
+
+### Suggested Git Commit Message
+
+```
+feat: implement FCFS event join via atomic RPC (M8)
+```
+
+### Estimated Difficulty
+
+4 / 5
+
+### Estimated Time
+
+5–8 hours
+
+### Potential Risks
+
+- RPC auth context — ensure auth.uid() available in SECURITY DEFINER function
+- Community membership auto-add policy — document in migration
+
+### Future Improvements
+
+- Optimistic UI with useOptimistic
+
+---
+
+## M9: Waitlist
+
+### Objective
+
+When event full, new joiners automatically waitlisted with visible position.
+
+### Features
+
+- join_event RPC waitlist branch (if not already complete from M2)
+- WaitlistCard component for user view
+- Admin waitlist tab (basic list)
+- Waitlist position display on event page
+- Warning badge for waitlisted status
+
+### Files Expected
+
+```
+src/components/domain/waitlist-card.tsx
+src/features/participants/queries.ts (getWaitlistedParticipants)
+src/app/(public)/e/[slug]/page.tsx (waitlist status)
+src/app/(dashboard)/events/[id]/page.tsx (waitlist tab)
+```
+
+### Acceptance Criteria
+
+- [ ] Join when full — status waitlisted
+- [ ] User sees waitlist position (e.g., "#3 on waitlist")
+- [ ] Admin sees ordered waitlist
+- [ ] Member cannot see other users' waitlist positions
+- [ ] Confirmed users unaffected
+
+### Manual Test Checklist
+
+- [ ] Fill event to capacity
+- [ ] Next join — waitlisted with position 1
+- [ ] Another join — position 2
+- [ ] Admin sees full waitlist order
+
+### Definition of Done
+
+Waitlist assignment and display complete. FR-WAITLIST-01, FR-WAITLIST-04 met.
+
+### Suggested Git Commit Message
+
+```
+feat: add automatic waitlist assignment and position display (M9)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+4–6 hours
+
+### Potential Risks
+
+- Waitlist position gaps after cancel — fixed in M10 promotion logic
+- UI showing waitlist to wrong users — verify RLS
+
+### Future Improvements
+
+- Waitlist position change notifications
+
+---
+
+## M10: Leave and Auto-Promotion
+
+### Objective
+
+Users leave events. Confirmed user leaving promotes first waitlisted user automatically.
+
+### Features
+
+- leaveEvent Server Action calling leave_event RPC
+- Leave button with ConfirmationDialog
+- promote_waitlisted called on confirmed cancel
+- Waitlist positions renumbered after waitlisted user leaves
+- UI updates for promoted user on refresh
+
+### Files Expected
+
+```
+src/features/participants/actions.ts (leaveEvent)
+src/features/participants/components/leave-event-button.tsx
+src/components/domain/confirmation-dialog.tsx
+src/app/(public)/e/[slug]/page.tsx (leave button when joined)
+```
+
+### Acceptance Criteria
+
+- [ ] User leaves — status cancelled
+- [ ] Confirmed user leaves — first waitlisted promoted to confirmed
+- [ ] Promoted user's waitlist position cleared
+- [ ] Remaining waitlist positions contiguous
+- [ ] Leave requires confirmation
+- [ ] Cannot leave if not joined
+
+### Manual Test Checklist
+
+- [ ] Confirmed user leaves — count decrements
+- [ ] Waitlisted user #1 becomes confirmed
+- [ ] Former #2 now #1 on waitlist
+- [ ] Waitlisted user leaves — positions renumber
+- [ ] Leave cancelled event participant — appropriate handling
+
+### Definition of Done
+
+Auto-promotion works synchronously. FR-JOIN-04, FR-WAITLIST-02, FR-WAITLIST-03 met.
+
+### Suggested Git Commit Message
+
+```
+feat: implement leave event with automatic waitlist promotion (M10)
+```
+
+### Estimated Difficulty
+
+4 / 5
+
+### Estimated Time
+
+4–6 hours
+
+### Potential Risks
+
+- Promotion race with simultaneous leave/join — RPC transaction must serialize
+- UI stale after promotion — revalidatePath critical
+
+### Future Improvements
+
+- Realtime promotion updates without refresh
+
+---
+
+## M11: Participant List
+
+### Objective
+
+Ordered participant list on event pages. Admin can remove participants.
+
+### Features
+
+- ParticipantList component
+- getConfirmedParticipants query with pagination support
+- removeParticipant action (admin) via RPC
+- Admin remove triggers promotion
+- "You" badge for current user
+- Numbered list by join order
+
+### Files Expected
+
+```
+src/components/domain/participant-list.tsx
+src/features/participants/actions.ts (removeParticipant)
+src/features/participants/queries.ts (getConfirmedParticipants)
+src/app/(public)/e/[slug]/page.tsx (participant list)
+src/app/(dashboard)/events/[id]/page.tsx (admin participant management)
+```
+
+### Acceptance Criteria
+
+- [ ] Public event page shows confirmed participants
+- [ ] List ordered by joined_at ASC
+- [ ] Avatar and display name shown
+- [ ] Admin removes participant — confirmation + promotion if confirmed
+- [ ] Member cannot remove others
+- [ ] Empty state when no participants
+
+### Manual Test Checklist
+
+- [ ] 5 participants — correct order
+- [ ] Admin remove confirmed — waitlist promotes
+- [ ] Member view — no remove buttons
+- [ ] Current user highlighted
+
+### Definition of Done
+
+Participant list and admin removal complete. FR-PARTICIPANTS met.
+
+### Suggested Git Commit Message
+
+```
+feat: add participant list and admin remove with promotion (M11)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+4–6 hours
+
+### Potential Risks
+
+- Pagination needed for large events — implement if >50 (optional MVP)
+- Remove self vs leave — both should work; leave preferred for self
+
+### Future Improvements
+
+- Realtime list updates
+- Export participant CSV
+
+---
+
+## M12: Attendance Management
+
+### Objective
+
+Admin marks attendance for confirmed participants on event day.
+
+### Features
+
+- markAttendance and bulkMarkAttendance actions
+- AttendanceCard or attendance list UI
+- Attendance tab on admin event page
+- Status: present, absent, no_show
+- Attendance summary counts
+
+### Files Expected
+
+```
+src/lib/validations/attendance.ts
+src/features/attendance/actions.ts
+src/features/attendance/queries.ts
+src/components/domain/attendance-card.tsx
+src/app/(dashboard)/events/[id]/attendance/page.tsx
+```
+
+### Acceptance Criteria
+
+- [ ] Admin marks individual attendance status
+- [ ] Only confirmed participants appear
+- [ ] Summary shows present/absent/no-show/unmarked counts
+- [ ] Member cannot mark attendance
+- [ ] Updates persist and survive refresh
+
+### Manual Test Checklist
+
+- [ ] Mark 3 present, 1 absent, 1 no-show — counts correct
+- [ ] Change status — updates
+- [ ] Member accessing attendance URL — denied
+
+### Definition of Done
+
+Attendance module complete. FR-ATTENDANCE met.
+
+### Suggested Git Commit Message
+
+```
+feat: add admin attendance marking and summary (M12)
+```
+
+### Estimated Difficulty
+
+2 / 5
+
+### Estimated Time
+
+3–5 hours
+
+### Potential Risks
+
+- Marking before event — optional warning in UI
+- Duplicate attendance records — unique constraint on participant_id
+
+### Future Improvements
+
+- QR check-in (Phase 5)
+
+---
+
+## M13: Admin Dashboard
+
+### Objective
+
+Polished admin dashboard with upcoming events, quick actions, and navigation shell.
+
+### Features
+
+- Dashboard home with upcoming events grid/list
+- StatisticsCard components (upcoming count, weekly participants)
+- Sidebar (desktop) and BottomNav (mobile)
+- Quick create event button
+- Copy share link from event cards
+- Empty state when no events
+
+### Files Expected
+
+```
+src/app/(dashboard)/page.tsx (dashboard home)
+src/components/layout/sidebar.tsx
+src/components/layout/bottom-nav.tsx
+src/components/domain/statistics-card.tsx
+src/components/domain/empty-state.tsx
+src/app/(dashboard)/layout.tsx (updated with nav)
+```
+
+### Acceptance Criteria
+
+- [ ] Dashboard shows upcoming published events
+- [ ] Event cards show capacity and confirmed count
+- [ ] Create event accessible from dashboard
+- [ ] Copy link works from dashboard
+- [ ] Mobile bottom nav; desktop sidebar
+- [ ] Empty state for new admin with no events
+
+### Manual Test Checklist
+
+- [ ] Dashboard loads with events
+- [ ] Navigate all nav items on mobile and desktop
+- [ ] Create event from dashboard CTA
+- [ ] Statistics show plausible numbers
+
+### Definition of Done
+
+Admin dashboard complete. FR-ADMIN met.
+
+### Suggested Git Commit Message
+
+```
+feat: add admin dashboard with navigation and event overview (M13)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+5–8 hours
+
+### Potential Risks
+
+- Layout shift between mobile/desktop — test both breakpoints
+- Stats query performance — simple counts acceptable for MVP
+
+### Future Improvements
+
+- Analytics charts (Phase 5)
+
+---
+
+## M14: RBAC Hardening
+
+### Objective
+
+Audit and verify all RLS policies. Role-gated UI matches permissions. No authorization gaps.
+
+### Features
+
+- Review all policies against [RBAC](./06_RBAC.md) matrix
+- requireCommunityAdmin, requireSuperAdmin helpers
+- UI guards on all admin actions
+- Fix any policy gaps found
+- Document super admin bootstrap SQL
+- RBAC test checklist execution
+
+### Files Expected
+
+```
+src/lib/auth/roles.ts
+supabase/migrations/20260101000003_rls_fixes.sql (if needed)
+src/features/**/** (UI guard updates across features)
+```
+
+### Acceptance Criteria
+
+- [ ] Every RBAC matrix row verified
+- [ ] Direct Supabase client cannot bypass restrictions
+- [ ] UI hides unauthorized actions
+- [ ] Super admin can access all resources
+- [ ] RBAC manual test checklist all pass
+
+### Manual Test Checklist
+
+- [ ] Guest: public event only
+- [ ] Member: join own community, no create event
+- [ ] Admin: full community management
+- [ ] Cross-community access denied
+- [ ] Direct INSERT participant denied
+
+### Definition of Done
+
+Security audit complete. FR-RBAC fully enforced.
+
+### Suggested Git Commit Message
+
+```
+fix: harden RBAC with RLS audit and UI role guards (M14)
+```
+
+### Estimated Difficulty
+
+4 / 5
+
+### Estimated Time
+
+4–8 hours
+
+### Potential Risks
+
+- Overly restrictive policy breaks legitimate access — test each role
+- Missing policy on new table — checklist prevents this
+
+### Future Improvements
+
+- Automated RLS tests in CI
+
+---
+
+## M15: Dark Mode and Polish
+
+### Objective
+
+Premium UI polish: dark mode default, light toggle, motion, loading/empty/error states everywhere.
+
+### Features
+
+- next-themes integration (class strategy)
+- Complete CSS variables for dark and light per [UI System](./10_UI_SYSTEM.md)
+- Theme toggle in navbar
+- Framer Motion page transitions and list stagger
+- LoadingState, EmptyState, ErrorState on all primary views
+- Toast notifications for all actions
+- Button gradient variant
+- prefers-reduced-motion support
+
+### Files Expected
+
+```
+src/app/globals.css (full tokens)
+src/components/theme-provider.tsx
+src/components/theme-toggle.tsx
+src/components/domain/loading-state.tsx
+src/components/domain/error-state.tsx
+src/components/ui/toast.tsx (shadcn)
+tailwind.config.ts (extended theme)
+Multiple page updates for states and motion
+```
+
+### Acceptance Criteria
+
+- [ ] Dark mode default; toggle persists
+- [ ] Light mode fully styled (no broken contrast)
+- [ ] All async views have loading skeleton
+- [ ] All lists have empty states
+- [ ] Errors show toast or ErrorState
+- [ ] Animations respect reduced motion
+- [ ] UI matches Component Library specs
+
+### Manual Test Checklist
+
+- [ ] Toggle theme — all pages work
+- [ ] Join/leave/create — toasts appear
+- [ ] Empty dashboard — delightful empty state
+- [ ] Slow network — skeletons visible
+- [ ] Mobile polish at 375px
+
+### Definition of Done
+
+Premium UI standards met. FR-UI requirements satisfied.
+
+### Suggested Git Commit Message
+
+```
+feat: add dark mode, motion, and polished loading/empty/error states (M15)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+6–10 hours
+
+### Potential Risks
+
+- Flash of wrong theme — use suppressHydrationWarning on html
+- Over-animation — keep subtle per UI System
+
+### Future Improvements
+
+- Custom community branding colors
+
+---
+
+## M16: Testing Foundation
+
+### Objective
+
+Vitest and Playwright configured with core tests for validation, auth, join, and waitlist promotion.
+
+### Features
+
+- Vitest config and unit tests for Zod schemas
+- Playwright config with auth setup
+- E2E: auth flow, join event, waitlist promotion
+- axe-core a11y scan on public event page
+- npm scripts: test, e2e, test:coverage
+
+### Files Expected
+
+```
+vitest.config.ts
+playwright.config.ts
+tests/unit/validations/*.test.ts
+tests/e2e/auth.spec.ts
+tests/e2e/join-event.spec.ts
+tests/e2e/waitlist-promotion.spec.ts
+tests/fixtures/auth.setup.ts
+package.json (scripts)
+```
+
+### Acceptance Criteria
+
+- [ ] `pnpm test` passes all unit tests
+- [ ] `pnpm e2e` passes critical flows (with test Supabase)
+- [ ] CI-ready test scripts documented
+- [ ] At least 10 unit tests for validation schemas
+- [ ] E2E covers join and promotion happy paths
+
+### Manual Test Checklist
+
+- [ ] Run unit tests locally — green
+- [ ] Run E2E against local dev — green
+- [ ] A11y scan — no critical violations
+
+### Definition of Done
+
+Testing infrastructure per [Testing](./12_TESTING.md). Regression suite for core flows.
+
+### Suggested Git Commit Message
+
+```
+test: add Vitest unit tests and Playwright E2E for core flows (M16)
+```
+
+### Estimated Difficulty
+
+4 / 5
+
+### Estimated Time
+
+6–10 hours
+
+### Potential Risks
+
+- E2E OAuth hard to automate — use test user session injection or dedicated test provider
+- Flaky waitlist test — use deterministic seed data
+
+### Future Improvements
+
+- Full RBAC E2E matrix
+- CI E2E on every PR
+
+---
+
+## M17: Deployment
+
+### Objective
+
+Production deployment on Vercel with Supabase production project and CI pipeline.
+
+### Features
+
+- Vercel project connected to GitHub
+- Production Supabase project with migrations applied
+- Environment variables configured
+- GitHub Actions CI: lint, typecheck, test
+- Google OAuth production URLs
+- Custom domain (optional)
+- Storage bucket for avatars (if not done in M4)
+
+### Files Expected
+
+```
+.github/workflows/ci.yml
+.env.example (final)
+README.md (deploy section updated in M18)
+vercel.json (if needed)
+```
+
+### Acceptance Criteria
+
+- [ ] Production URL loads application
+- [ ] Google auth works on production domain
+- [ ] Database migrations applied to production
+- [ ] CI passes on push to main
+- [ ] Preview deploys work on PR
+- [ ] No secrets in client bundle
+
+### Manual Test Checklist
+
+- [ ] Sign in on production
+- [ ] Create event on production
+- [ ] Share link works from mobile
+- [ ] Join flow works on production
+- [ ] CI green on main branch
+
+### Definition of Done
+
+Live production environment. [Deployment](./13_DEPLOYMENT.md) checklist complete.
+
+### Suggested Git Commit Message
+
+```
+chore: add CI pipeline and configure production deployment (M17)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+4–6 hours
+
+### Potential Risks
+
+- OAuth redirect mismatch on production domain
+- Migration drift between local and prod — always push migrations first
+
+### Future Improvements
+
+- Staging environment
+- Sentry error tracking
+
+---
+
+## M18: MVP QA and Launch Prep
+
+### Objective
+
+Full manual QA, performance pass, documentation update, super admin bootstrap. MVP ready for real users.
+
+### Features
+
+- Execute full manual QA checklist from [Testing](./12_TESTING.md)
+- Fix critical bugs found
+- Update README with setup and usage instructions
+- Bootstrap super admin in production
+- Lighthouse performance check on public event page
+- Mark all milestones complete in this document
+- Smoke test on iOS Safari and Android Chrome
+
+### Files Expected
+
+```
+README.md (updated)
+docs/16_IMPLEMENTATION_PLAN.md (progress marked complete)
+Bug fixes as needed (minimal scope)
+```
+
+### Acceptance Criteria
+
+- [ ] All MVP requirements from [Requirements](./02_REQUIREMENTS.md) verified
+- [ ] Manual QA checklist 100% pass
+- [ ] No critical or high severity open bugs
+- [ ] README accurate for new developer setup
+- [ ] LCP < 2.5s on public event page (mobile lab test)
+- [ ] Super admin bootstrapped
+- [ ] First real community can be created end-to-end
+
+### Manual Test Checklist
+
+Use complete checklist from [Testing](./12_TESTING.md) — Authentication through Cross-Browser sections.
+
+### Definition of Done
+
+**MVP LAUNCH READY.** Product replaces WhatsApp participant lists for first real community.
+
+### Suggested Git Commit Message
+
+```
+docs: complete MVP QA and update README for launch (M18)
+```
+
+### Estimated Difficulty
+
+3 / 5
+
+### Estimated Time
+
+4–8 hours
+
+### Potential Risks
+
+- Scope creep fixing non-critical bugs — prioritize launch blockers only
+- Last-minute feature requests — defer to Phase 1 roadmap
+
+### Future Improvements
+
+- Begin Phase 1 notifications per [Roadmap](./17_ROADMAP.md)
+
+---
+
+## Milestone Dependency Graph
+
+```mermaid
+flowchart TD
+  M0 --> M1
+  M1 --> M2
+  M2 --> M3
+  M3 --> M4
+  M4 --> M5
+  M5 --> M6
+  M6 --> M7
+  M7 --> M8
+  M8 --> M9
+  M9 --> M10
+  M10 --> M11
+  M11 --> M12
+  M12 --> M13
+  M13 --> M14
+  M14 --> M15
+  M15 --> M16
+  M16 --> M17
+  M17 --> M18
+```
+
+---
+
+## Total Estimated Timeline
+
+| Phase | Milestones | Estimated Time |
+|-------|------------|----------------|
+| Setup | M0–M2 | 10–17 hours |
+| Core platform | M3–M7 | 19–32 hours |
+| Participation | M8–M12 | 20–31 hours |
+| Polish and launch | M13–M18 | 27–48 hours |
+| **Total** | M0–M18 | **76–128 hours** |
+
+Estimate for solo developer with AI assistance: **4–8 weeks** at part-time pace.
+
+---
+
+## AI Session Quick Reference
+
+To start implementing, prompt:
+
+```
+Read docs/16_IMPLEMENTATION_PLAN.md and implement the next incomplete milestone.
+Follow docs/15_AI_DEVELOPMENT_GUIDE.md session protocol.
+Do not skip milestones or add out-of-scope features.
+```

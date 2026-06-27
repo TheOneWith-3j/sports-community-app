@@ -1,0 +1,41 @@
+---
+description: Server Actions and Supabase backend patterns
+globs: src/features/**,src/lib/supabase/**,src/app/api/**
+alwaysApply: false
+---
+
+# Backend Rules
+
+Read `docs/09_API_STRATEGY.md`, `docs/04_SYSTEM_ARCHITECTURE.md`, and `docs/07_AUTHENTICATION.md`.
+
+## Server Actions
+
+- Location: `src/features/{feature}/actions.ts`
+- Mark with `"use server"`
+- Validate ALL inputs with Zod from `src/lib/validations/`
+- Return `ActionResult<T>` — never throw to client
+- Auth: `supabase.auth.getUser()` — use `getUser()` not `getSession()`
+- Log errors: `console.error('[actionName]', { userId, error })`
+- Revalidate affected paths after success
+
+## Supabase Client
+
+- Browser: `src/lib/supabase/client.ts` — Client Components only
+- Server: `src/lib/supabase/server.ts` — Server Components and Actions
+- **Never use `SUPABASE_SERVICE_ROLE_KEY` in Server Actions or Route Handlers for user requests**
+
+## Atomic Operations
+
+- Join/leave/remove participant: call RPC (`join_event`, `leave_event`, `remove_participant`)
+- Never INSERT directly into `event_participants` from application code
+
+## Error Mapping
+
+- Zod failure → `{ code: 'VALIDATION_ERROR', fieldErrors }`
+- No user → `{ code: 'UNAUTHORIZED' }`
+- RLS denial → `{ code: 'FORBIDDEN' }`
+- Never expose Postgres error text to users
+
+## No REST API
+
+Do not create CRUD Route Handlers for MVP. Exception: OAuth callback at `/auth/callback`.

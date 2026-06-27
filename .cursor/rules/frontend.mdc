@@ -1,0 +1,38 @@
+---
+description: Next.js App Router and React frontend conventions
+globs: src/app/**,src/components/**,src/hooks/**
+alwaysApply: false
+---
+
+# Frontend Rules
+
+Read `docs/04_SYSTEM_ARCHITECTURE.md`, `docs/10_UI_SYSTEM.md`, and `docs/11_COMPONENT_LIBRARY.md`.
+
+## Server vs Client
+
+- Default to Server Components — no `"use client"` unless required
+- Client Components for: forms with pending state, modals, theme toggle, Framer Motion, toasts
+- Fetch data in Server Components; pass serializable props to Client Components
+- Use `Suspense` + `loading.tsx` for streaming
+
+## Next.js App Router
+
+- Route groups: `(auth)`, `(dashboard)`, `(public)`
+- Public event page: `src/app/(public)/e/[slug]/page.tsx`
+- Protected dashboard: `src/app/(dashboard)/**` guarded by middleware
+- Use `generateMetadata` for SEO on public pages
+- Call `revalidatePath` after mutations (in Server Actions, not components)
+
+## UI Standards
+
+- Use design tokens from `docs/10_UI_SYSTEM.md` — no hardcoded hex colors
+- Dark mode default; support light via `next-themes`
+- Mobile-first: test at 375px width; 44px min touch targets
+- Every list view needs: loading (Skeleton), empty (EmptyState), error (ErrorState)
+- shadcn/ui for primitives; domain components per `docs/11_COMPONENT_LIBRARY.md`
+
+## Anti-Patterns
+
+- No `useEffect` for initial data fetch — use Server Components
+- No inline styles except dynamic values
+- No client-side Supabase for reads that can be server-side

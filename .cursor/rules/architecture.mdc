@@ -1,0 +1,34 @@
+---
+description: Architecture constraints for the Sports Community Platform modular monolith
+alwaysApply: true
+---
+
+# Architecture Rules
+
+Read `docs/04_SYSTEM_ARCHITECTURE.md` and `docs/18_DECISIONS.md` before structural changes.
+
+## Non-Negotiable
+
+- **Modular monolith only** — no microservices, no separate REST API for MVP
+- **Feature-first structure** — code in `src/features/{auth,communities,events,participants,attendance}/`
+- **Server Components by default** — `"use client"` only for interactivity, hooks, motion, theme
+- **Server Actions for mutations** — not Route Handlers (except OAuth callback)
+- **Supabase + RLS** — user-scoped client in all user-facing paths
+- **Not a court booking system** — no courts, slots, reservations, or facility booking tables
+
+## Patterns
+
+- Reads: Server Components + `features/*/queries.ts`
+- Writes: Server Actions in `features/*/actions.ts`
+- Cross-feature UI: `src/components/domain/`
+- shadcn primitives: `src/components/ui/` — extend, don't fork heavily
+
+## Milestone Discipline
+
+Implement one milestone at a time per `docs/16_IMPLEMENTATION_PLAN.md`. Do not skip M2 (schema) before join logic.
+
+## Request Flow
+
+Middleware → Server Component → (optional Client Component) → Server Action → Supabase RPC/RLS
+
+Never bypass this stack with direct service role access for user operations.

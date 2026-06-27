@@ -1,0 +1,43 @@
+---
+description: Vitest and Playwright testing conventions
+globs: tests/**,**/*.test.ts,**/*.spec.ts,vitest.config.ts,playwright.config.ts
+alwaysApply: false
+---
+
+# Testing Rules
+
+Read `docs/12_TESTING.md` before adding or modifying tests.
+
+## Unit Tests (Vitest)
+
+- Location: `tests/unit/`
+- Test: Zod schemas, pure utilities, error mapping functions
+- Do NOT test: shadcn primitives, RLS (use SQL/E2E instead)
+- Run: `pnpm test`
+
+## E2E Tests (Playwright)
+
+- Location: `tests/e2e/`
+- Critical paths: auth, join FCFS, waitlist promotion, admin attendance
+- Use test Supabase project or local — **never production**
+- Run: `pnpm e2e`
+
+## When to Add Tests
+
+- M16+: required for new validation schemas and critical flows
+- Bug fixes: add regression test
+- Do not add trivial tests that assert obvious behavior
+
+## Accessibility
+
+- Use `@axe-core/playwright` on login, public event, dashboard pages
+- Zero critical violations before M18
+
+## CI
+
+- All tests must pass before marking milestone complete (M16+)
+- Commands: `pnpm lint && pnpm typecheck && pnpm test`
+
+## Manual QA
+
+Every milestone has a manual checklist in `docs/16_IMPLEMENTATION_PLAN.md` — complete before commit.

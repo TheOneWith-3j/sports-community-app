@@ -1,0 +1,50 @@
+---
+description: Security and OWASP-aligned development constraints
+alwaysApply: true
+---
+
+# Security Rules
+
+Read `docs/08_SECURITY.md`, `docs/06_RBAC.md`, and `docs/07_AUTHENTICATION.md`.
+
+## Critical Prohibitions
+
+- **Never expose `SUPABASE_SERVICE_ROLE_KEY` to client, Server Actions, or user-triggered Route Handlers**
+- **Never bypass RLS** except in local migration/seed scripts
+- **Never use `dangerouslySetInnerHTML`** for user-generated content
+- **Never commit `.env.local` or secrets** to git
+- **Never disable RLS** on any table
+
+## Authorization
+
+- RLS is the authoritative enforcement layer
+- UI role checks are defense-in-depth only
+- Join/leave/remove via SECURITY DEFINER RPC with internal auth checks
+- Validate community membership before event operations
+
+## Input Validation
+
+- Zod validate every Server Action input
+- Re-validate on server even if client validated
+- Sanitize: store event descriptions as plain text
+- UUID params: validate with `z.string().uuid()`
+
+## Session
+
+- Server-side: always `getUser()` not `getSession()`
+- OAuth return URLs: same-origin relative paths only for `next` param
+- HTTPS only in production
+
+## Rate Limiting
+
+- Debounce join/leave actions in UI
+- Server Action should reject rapid repeated calls
+
+## Audit
+
+- Admin remove participant, cancel event: write to `audit_logs`
+- Log server errors with context; never log secrets or full JWTs
+
+## OWASP
+
+Follow mappings in `docs/08_SECURITY.md`. When in doubt, choose the more restrictive option.

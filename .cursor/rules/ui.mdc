@@ -1,0 +1,55 @@
+---
+description: Design system and UI component enforcement
+globs: src/components/**,src/app/**/*.tsx,src/features/**/components/**
+alwaysApply: false
+---
+
+# UI Rules
+
+Read `docs/10_UI_SYSTEM.md` and `docs/11_COMPONENT_LIBRARY.md`.
+
+## Design Tokens
+
+- Colors: CSS variables (`--background`, `--brand-primary`, etc.) — no raw `#hex` in components
+- Typography: use documented scale (`text-display-md`, `text-body-md`, etc.)
+- Spacing: 4px grid; generous section padding
+- Radius: cards `rounded-2xl`, buttons `rounded-xl`, inputs `rounded-lg`
+- Brand gradient: primary CTAs only — do not overuse
+
+## Theme
+
+- Dark mode default; full light mode parity required
+- Test every new component in both themes
+- Glass effect (`backdrop-blur-md bg-white/5`) — navigation and overlays only
+
+## Components
+
+- Use specs from `docs/11_COMPONENT_LIBRARY.md` for domain components
+- States required: loading, empty, error for all data views
+- Toast feedback for all Server Action success/failure
+- ConfirmationDialog for destructive actions (leave, remove, cancel)
+
+## Motion
+
+- Framer Motion in Client Components only
+- Durations: 150–350ms; stagger lists 50ms
+- Always respect `prefers-reduced-motion`
+
+## Accessibility
+
+- WCAG 2.1 AA target
+- Focus rings on all interactive elements
+- `aria-label` on icon-only buttons
+- Form labels with `htmlFor`
+- Live region for join status changes
+
+## Icons
+
+- Lucide React only
+- Sizes per UI System (16px inline, 20px nav, 48px empty states)
+
+## Mobile-First
+
+- Design for 375px first
+- Bottom nav on dashboard mobile; sidebar on desktop
+- Sticky join CTA on public event page mobile

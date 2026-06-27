@@ -1,0 +1,52 @@
+---
+description: PostgreSQL schema, migrations, and RLS conventions
+globs: supabase/**,src/types/database.ts
+alwaysApply: false
+---
+
+# Database Rules
+
+Read `docs/05_DATABASE_DESIGN.md` and `docs/06_RBAC.md` before any schema change.
+
+## Naming
+
+- Tables: snake_case plural (`event_participants`)
+- Columns: snake_case (`created_at`, `community_id`)
+- Enums: snake_case types (`participant_status`)
+- Indexes: `idx_{table}_{columns}`
+- RPC functions: snake_case verbs (`join_event`)
+
+## Required Columns
+
+All user-facing tables: `id UUID PK`, `created_at`, `updated_at`
+Soft-deletable: add `deleted_at TIMESTAMPTZ NULL`
+Filter `deleted_at IS NULL` in SELECT policies
+
+## Migrations
+
+- Files in `supabase/migrations/` with timestamp prefix
+- One logical change per migration
+- Include RLS policies in same migration as table creation
+- Never edit applied migrations — create new migration to fix
+
+## RLS
+
+- **Enable RLS on every table** — no exceptions
+- Policies documented in `docs/06_RBAC.md`
+- Use helper functions: `is_super_admin()`, `is_community_admin()`, `is_community_member()`
+- `event_participants`: deny direct INSERT/UPDATE/DELETE — RPC only
+
+## Business Logic in SQL
+
+FCFS join, waitlist, and promotion live in PostgreSQL functions for atomicity.
+See `docs/05_DATABASE_DESIGN.md` for function specs.
+
+## Types
+
+Regenerate after migration: `pnpm supabase gen types typescript --local > src/types/database.ts`
+
+## Forbidden
+
+- No court/booking/reservation/slot tables
+- No BIGINT serial IDs — UUID only
+- No disabling RLS for convenience
