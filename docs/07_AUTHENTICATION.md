@@ -16,7 +16,7 @@
 
 **Target:** Auth0 is the single identity provider. Google OAuth is configured as an Auth0 social connection, not as a second app identity provider. Supabase is used for PostgreSQL, migrations, RLS, and optional Storage—not Supabase Auth.
 
-**Implementation status:** Auth0 MCP onboarding created the Regular Web Application and saved its credentials to the ignored `.env.local`; the SDK wiring and forward database migration are in place. The `RallyNook Supabase JWT Role Claim` Post-Login Action is built and deployed, but is not yet attached to the Login trigger. Google sign-in and real Supabase JWT validation have not yet passed. M3 is incomplete; do not begin M4 until its acceptance criteria are verified. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md) and [Repository Audit](./19_REPOSITORY_AUDIT.md).
+**Implementation status:** Auth0 MCP onboarding created the Regular Web Application and saved its credentials to ignored `.env.local`; the SDK wiring and forward database migration are in place. The `RallyNook Supabase JWT Role Claim` Post-Login Action is built and deployed, and the project owner confirmed attaching it to the Login trigger. The app's Google sign-in route redirects to Google Accounts, and Auth0 Universal Login displays the Google option. Interactive sign-in, verification of the issued `role: authenticated` ID-token claim, and real Supabase JWT validation have not yet passed. M3 is incomplete; do not begin M4 until its acceptance criteria are verified. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md) and [Repository Audit](./19_REPOSITORY_AUDIT.md).
 
 Use the [official Auth0 Next.js SDK](https://auth0.com/docs/quickstart/webapp/nextjs) and its current App Router integration pattern. Use standards-based OIDC/OAuth Authorization Code Flow with PKCE and the SDK-managed server session. Do not build password storage, token issuance, or OAuth protocol handling from scratch.
 
@@ -131,8 +131,8 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
    - **Allowed Logout URLs:** `http://localhost:3000/`
    - **Skip non-verifiable callback URI confirmation:** enabled
 2. Confirm the application uses the default **RS256** signing algorithm; Supabase does not support HS256 or PS256 for this integration.
-3. In **Authentication → Social**, enable the Google connection and make it available to this application. For development, use Auth0's test/development provider keys if offered; otherwise configure Google's OAuth client in the connection settings. The application starts this connection using the `google-oauth2` connection name.
-4. The `RallyNook Supabase JWT Role Claim` Action has been created and deployed through Auth0 MCP. Verify its code in **Actions → Library**, then open **Actions → Triggers → Login** and attach that deployed Action to the post-login trigger. Older dashboard instructions may refer to **Actions → Flows → Login**; the current dashboard groups these under Triggers. If it must be recreated, select **Login / Post Login** and use:
+3. The project owner enabled the Google connection for the application. We verified that the app's `google-oauth2` login route redirects to Google's sign-in page and that Auth0 Universal Login presents **Continue with Google**. For development, use Auth0's test/development provider keys if offered; otherwise configure Google's OAuth client in the connection settings.
+4. The `RallyNook Supabase JWT Role Claim` Action was created and deployed through Auth0 MCP; the project owner confirmed attaching it to the Login trigger under **Actions → Triggers → Login**. Older dashboard instructions may refer to **Actions → Flows → Login**; the current dashboard groups these under Triggers. If it must be recreated, select **Login / Post Login** and use:
 
    ```js
    exports.onExecutePostLogin = async (event, api) => {
@@ -161,7 +161,7 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
 
    Visit `http://localhost:3000/login`, complete Google sign-in, confirm `/dashboard` loads, then sign out and confirm the protected route redirects back to sign-in.
 
-The Auth0 tenant/client and deployed Action now exist. Enabling Google and attaching the Post-Login Action remain dashboard steps. The local Supabase stack and its environment values are also required for end-to-end sign-in. None of these steps require enabling billing.
+The Auth0 tenant/client, Google connection, and deployed/attached Action are configured. Complete a real Google sign-in, verify the ID token contains the required Supabase role claim, and run the local Supabase database/JWT tests. The current validation environment has neither the Supabase CLI nor an available Docker engine, so local Supabase startup remains blocked until those tools are installed and running. None of these steps require enabling billing.
 
 ### Auth0 tenant name and Management API scopes
 
