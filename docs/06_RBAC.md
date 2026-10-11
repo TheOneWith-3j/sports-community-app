@@ -17,9 +17,11 @@ Authorization uses a two-layer role model:
 1. **Platform roles** — on `profiles.platform_role`
 2. **Community roles** — on `community_members.role`
 
-**Guest** is not stored; it represents unauthenticated requests (`auth.uid()` IS NULL).
+**Guest** is not stored; it represents a request without a valid Auth0 identity or mapped application profile. Supabase Auth is not the identity provider.
 
-All permissions are enforced by **Supabase Row Level Security (RLS)**. UI hiding of unauthorized actions is defense-in-depth only and must never be the sole control.
+All permissions are enforced by **Supabase Row Level Security (RLS)** using trusted application role data. Auth0 authenticates identity; it does not grant community roles. UI hiding of unauthorized actions is defense-in-depth only and must never be the sole control.
+
+**Migration note:** The original M2 migrations use `auth.uid()` as a profile UUID. The forward Auth0 migration replaces caller lookups with `current_profile_id()` in policies and RPCs. Validate the migration and test guest, invalid-token, and cross-community access before deployment. Never cast Auth0 `sub` to UUID.
 
 ---
 
@@ -38,7 +40,7 @@ A user can be **Member** at platform level and **Admin** in one community simult
 
 ```mermaid
 flowchart TD
-  Start[Request] --> HasSession{auth.uid exists?}
+  Start[Request] --> HasSession{Valid Auth0 identity?}
   HasSession -->|No| Guest[Guest]
   HasSession -->|Yes| SuperCheck{platform_role = super_admin?}
   SuperCheck -->|Yes| SuperAdmin[Super Admin]
@@ -159,7 +161,7 @@ flowchart TD
 
 | Rule | Enforcement |
 |------|-------------|
-| Guest cannot join events | RPC checks `auth.uid()`; UI shows sign-in prompt |
+| Guest cannot join events | RPC requires a mapped `current_profile_id()`; UI shows sign-in prompt |
 | Member must belong to community to join event | RPC checks `is_community_member` |
 | Cannot join draft/cancelled/completed events | RPC validates `events.status = 'published'` |
 | Cannot join past events | RPC validates `events.starts_at > now()` |
@@ -180,17 +182,17 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- profiles_select_own
 CREATE POLICY profiles_select_own ON profiles FOR SELECT
-  USING (id = auth.uid() AND deleted_at IS NULL);
+  USING (id = current_profile_id() AND deleted_at IS NULL);
 
 -- profiles_select_community_peers
 CREATE POLICY profiles_select_community_peers ON profiles FOR SELECT
   USING (
     deleted_at IS NULL AND (
-      id = auth.uid()
+      id = current_profile_id()
       OR EXISTS (
         SELECT 1 FROM community_members cm1
         JOIN community_members cm2 ON cm1.community_id = cm2.community_id
-        WHERE cm1.profile_id = auth.uid()
+        WHERE cm1.profile_id = current_profile_id()
           AND cm2.profile_id = profiles.id
       )
       OR is_super_admin()
@@ -199,8 +201,8 @@ CREATE POLICY profiles_select_community_peers ON profiles FOR SELECT
 
 -- profiles_update_own
 CREATE POLICY profiles_update_own ON profiles FOR UPDATE
-  USING (id = auth.uid() AND deleted_at IS NULL)
-  WITH CHECK (id = auth.uid());
+  USING (id = current_profile_id() AND deleted_at IS NULL)
+  WITH CHECK (id = current_profile_id());
 
 -- profiles_super_admin_all
 CREATE POLICY profiles_super_admin_all ON profiles FOR ALL
@@ -223,7 +225,7 @@ CREATE POLICY communities_select_member ON communities FOR SELECT
 
 -- communities_insert_authenticated
 CREATE POLICY communities_insert_authenticated ON communities FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND owner_id = auth.uid());
+  WITH CHECK (current_profile_id() IS NOT NULL AND owner_id = current_profile_id());
 
 -- communities_update_admin
 CREATE POLICY communities_update_admin ON communities FOR UPDATE
@@ -292,7 +294,7 @@ CREATE POLICY events_member_select ON events FOR SELECT
 CREATE POLICY events_insert_admin ON events FOR INSERT
   WITH CHECK (
     is_community_admin(community_id)
-    AND created_by = auth.uid()
+    AND created_by = current_profile_id()
   );
 
 -- events_update_admin
@@ -320,7 +322,7 @@ CREATE POLICY event_participants_select ON event_participants FOR SELECT
     )
     AND (
       status = 'confirmed'
-      OR profile_id = auth.uid()
+      OR profile_id = current_profile_id()
       OR is_community_admin((
         SELECT community_id FROM events WHERE id = event_participants.event_id
       ))
@@ -354,7 +356,7 @@ CREATE POLICY attendance_select_own ON attendance_records FOR SELECT
     EXISTS (
       SELECT 1 FROM event_participants ep
       WHERE ep.id = attendance_records.participant_id
-        AND ep.profile_id = auth.uid()
+        AND ep.profile_id = current_profile_id()
     )
   );
 
@@ -384,7 +386,7 @@ CREATE POLICY audit_logs_select_super ON audit_logs FOR SELECT
   USING (is_super_admin());
 
 CREATE POLICY audit_logs_insert_admin ON audit_logs FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL);
+  WITH CHECK (current_profile_id() IS NOT NULL);
 ```
 
 ---

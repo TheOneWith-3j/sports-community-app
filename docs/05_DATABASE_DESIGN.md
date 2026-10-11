@@ -15,6 +15,8 @@
 
 Production-ready PostgreSQL schema for Supabase. All tables use UUID primary keys, audit timestamps, and RLS. Soft deletes apply to user-facing entities. Business-critical join/waitlist logic lives in PostgreSQL functions for atomicity.
 
+**Identity boundary:** Auth0 is the sole identity provider; Supabase Auth is not used. The existing M2 migration is coupled to `auth.users` and `auth.uid()` and is not the target schema. Before M3 can be accepted, migrate the profile identity binding and every RLS policy/RPC to a trusted, server-verified Auth0 issuer/subject mapping. See [Authentication](./07_AUTHENTICATION.md) and [Repository Audit](./19_REPOSITORY_AUDIT.md).
+
 **This schema models event participation, not court or facility booking.**
 
 ---
@@ -38,7 +40,7 @@ Production-ready PostgreSQL schema for Supabase. All tables use UUID primary key
 
 ```mermaid
 erDiagram
-  auth_users ||--|| profiles : extends
+  auth0_identity ||--|| profiles : identifies
   profiles ||--o{ community_members : has
   communities ||--o{ community_members : has
   communities ||--o{ events : hosts
@@ -52,6 +54,8 @@ erDiagram
 
   profiles {
     uuid id PK
+    text auth_issuer
+    text auth_subject
     text display_name
     text avatar_url
     text phone
@@ -164,11 +168,13 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'no_show');
 
 ### `profiles`
 
-**Purpose:** Extends `auth.users` with application-specific user data. One row per authenticated user.
+**Purpose:** Stores application-specific user data. Each profile has an internal UUID independent of its external identity-provider subject.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | UUID | PK, FK → `auth.users(id)` ON DELETE CASCADE | Same as auth user ID |
+| `id` | UUID | PK | Stable internal application identity |
+| `auth_issuer` | TEXT | NOT NULL, unique with `auth_subject` | Validated Auth0 issuer |
+| `auth_subject` | TEXT | NOT NULL, unique with `auth_issuer` | Validated Auth0 `sub`; never cast to UUID |
 | `display_name` | TEXT | NOT NULL | User-visible name |
 | `avatar_url` | TEXT | NULL | Profile image URL |
 | `phone` | TEXT | NULL | Optional phone |
@@ -179,9 +185,10 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'no_show');
 
 **Indexes:**
 
+- Unique index on (`auth_issuer`, `auth_subject`) for identity binding
 - `idx_profiles_platform_role` ON (`platform_role`) WHERE `deleted_at IS NULL`
 
-**Why it exists:** Supabase Auth stores credentials; app needs display data and platform role for super admin.
+**Why it exists:** Auth0 authenticates users; the app stores profile data and trusted application roles in PostgreSQL.
 
 ---
 
@@ -384,17 +391,17 @@ CREATE UNIQUE INDEX idx_event_participants_active_unique
 
 ### Helper Functions (RLS)
 
+`current_profile_id()` is a trusted helper that resolves the verified JWT's `(iss, sub)` pair to the internal UUID profile. Migration `20260101000003_auth0_identity.sql` implements it as a narrowly scoped SECURITY DEFINER function with a pinned empty search path; validate the migration and RLS behavior locally before deployment.
+
+All policies and RPCs below use `current_profile_id()` as the caller's internal profile ID. It returns `NULL` for a guest or unmapped identity.
+
 ```sql
--- Returns auth.uid() as UUID; wrapper for clarity
-CREATE OR REPLACE FUNCTION auth_user_id() RETURNS UUID AS $$
-  SELECT auth.uid();
-$$ LANGUAGE sql STABLE;
 
 -- Check if current user is super admin
 CREATE OR REPLACE FUNCTION is_super_admin() RETURNS BOOLEAN AS $$
   SELECT EXISTS (
     SELECT 1 FROM profiles
-    WHERE id = auth.uid()
+    WHERE id = current_profile_id()
       AND platform_role = 'super_admin'
       AND deleted_at IS NULL
   );
@@ -406,7 +413,7 @@ CREATE OR REPLACE FUNCTION is_community_admin(p_community_id UUID) RETURNS BOOLE
     SELECT 1 FROM community_members cm
     JOIN profiles p ON p.id = cm.profile_id
     WHERE cm.community_id = p_community_id
-      AND cm.profile_id = auth.uid()
+      AND cm.profile_id = current_profile_id()
       AND cm.role = 'admin'
       AND p.deleted_at IS NULL
   ) OR is_super_admin();
@@ -417,7 +424,7 @@ CREATE OR REPLACE FUNCTION is_community_member(p_community_id UUID) RETURNS BOOL
   SELECT EXISTS (
     SELECT 1 FROM community_members
     WHERE community_id = p_community_id
-      AND profile_id = auth.uid()
+      AND profile_id = current_profile_id()
   ) OR is_super_admin();
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 ```
@@ -445,7 +452,7 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
 **Logic:**
 
-1. Find active participation for `auth.uid()`
+1. Resolve the current internal profile from the verified Auth0 issuer and subject; find its active participation
 2. Set status to `cancelled`, set `cancelled_at`
 3. If was `confirmed`: call `promote_waitlisted(p_event_id)`
 4. If was `waitlisted`: reorder remaining waitlist positions
@@ -493,24 +500,9 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-### `handle_new_user`
+### Auth0 profile provisioning
 
-On `auth.users` INSERT, create profile:
-
-```sql
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO profiles (id, display_name, avatar_url)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', 'Player'),
-    NEW.raw_user_meta_data->>'avatar_url'
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
+There is no `auth.users` trigger. The server-side login/profile-provisioning operation calls `ensure_current_profile()`, which resolves or creates a profile with a race-safe unique `(auth_issuer, auth_subject)` binding derived from verified claims. Profile creation does not accept caller-supplied subject values and assigns only the default `member` role. The migration's SQL tests must pass locally before applying it to hosted data.
 
 ---
 

@@ -1,14 +1,27 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
-import { getCurrentUser } from "@/features/auth/queries";
+import { ensureCurrentProfile } from "@/features/auth/queries";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getCurrentUser();
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-background" />}>
+      <AuthenticatedDashboard>{children}</AuthenticatedDashboard>
+    </Suspense>
+  );
+}
 
-  if (!user) {
-    redirect("/login");
+async function AuthenticatedDashboard({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  await connection();
+  const profileId = await ensureCurrentProfile();
+
+  if (!profileId) {
+    redirect("/auth/login?returnTo=%2Fdashboard");
   }
 
   return (

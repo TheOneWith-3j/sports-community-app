@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sports Community Platform
 
-## Getting Started
+Event participation management for sports communities. Admins share event links, members join first-come-first-served, full events use a waitlist, and admins record attendance. This is **not** a court-booking system.
 
-First, run the development server:
+## Technology
+
+- Next.js App Router, React, TypeScript (strict), Tailwind CSS
+- pnpm, Zod, Vitest, Playwright
+- PostgreSQL with Supabase migrations and Row Level Security
+- **Target identity:** Auth0 as the single identity provider; Google login is an Auth0 connection
+- CI: GitHub Actions on the public repository
+- Hosting: not selected until free-tier terms and product eligibility are verified
+
+## Current status
+
+**Overall milestone progress:** `###----------------` **3/19 complete (16%)**
+
+M0–M2 are complete. M3 is in progress: the application now uses the Auth0 SDK, maps verified Auth0 issuer/subject claims to internal UUID profiles, and has a forward migration for PostgreSQL RLS/RPC identity checks. The code passes lint, typecheck, and production build; all migrations applied successfully to a temporary local PostgreSQL instance. All 21 database regression assertions also passed against local PostgreSQL using a temporary TAP-compatible test shim.
+
+**M3 is not complete yet.** Live Auth0 sign-in and the real Supabase Auth0 third-party JWT integration still require an Auth0 tenant and Google connection, plus running the suite with Supabase's actual pgTAP runner. M4 and production deployment remain blocked until those checks pass. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md), [authentication setup](./docs/07_AUTHENTICATION.md), and [repository audit](./docs/19_REPOSITORY_AUDIT.md).
+
+## Local development
+
+Requirements: Node.js 20+, pnpm 9+, Supabase CLI, and Docker only if running the local Supabase stack.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The public landing page and quality checks work without cloud credentials. To sign in locally, configure the Auth0 application and local Supabase third-party integration using [the authentication setup guide](./docs/07_AUTHENTICATION.md), then populate `.env.local`. Never paste secrets into issues, pull requests, or chat.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For local database, migration, and database-test work:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+supabase start
+supabase db reset
+supabase test db
+```
 
-## Learn More
+The live Auth0 tenant and Supabase hosted project are not required for lint, typecheck, or build. No service should require billing or paid usage.
 
-To learn more about Next.js, take a look at the following resources:
+## Quality checks
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm lint
+pnpm typecheck
+pnpm build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The test runner/scripts are introduced in M16; until then run the checks currently defined in `package.json`.
 
-## Deploy on Vercel
+## Budget and architecture rules
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- $0 ongoing service cost is mandatory. Free trials, expiring credits, and required paid features do not qualify.
+- Never enable billing, upgrade, or accept charges without explicit authorization.
+- Verify pricing, quotas, payment requirements, terms, and restrictions from official sources before adopting services.
+- Auth0 is the sole identity provider; application roles stay in trusted PostgreSQL records and are enforced by RLS.
+- No service-role key in browser or user-triggered request paths.
+- No AI-agent watermark or `Co-authored-by` commit trailer.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Documentation
+
+- [Documentation index](./docs/README.md)
+- [Milestone plan](./docs/16_IMPLEMENTATION_PLAN.md)
+- [Authentication](./docs/07_AUTHENTICATION.md)
+- [RBAC](./docs/06_RBAC.md)
+- [Free-tier technology audit](./docs/19_REPOSITORY_AUDIT.md)
+- [Deployment](./docs/13_DEPLOYMENT.md)

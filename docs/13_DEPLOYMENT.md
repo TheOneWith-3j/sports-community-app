@@ -12,7 +12,7 @@
 
 ## Overview
 
-Deploy the Next.js application to **Vercel** and the database to **Supabase**. MVP runs entirely on free tiers. This document covers environment setup, deployment workflow, and CI/CD.
+Run and test the Next.js application locally without paid services. Auth0 is the intended identity provider and Supabase PostgreSQL is the database candidate; hosted deployment is not approved until terms, payment requirements, quotas, and product eligibility are verified. See [Repository Audit](./19_REPOSITORY_AUDIT.md). Never enable billing or paid resources without explicit authorization.
 
 ---
 
@@ -21,10 +21,9 @@ Deploy the Next.js application to **Vercel** and the database to **Supabase**. M
 ```mermaid
 flowchart LR
   Dev[Local Dev] --> GitHub[GitHub Repo]
-  GitHub --> VercelPreview[Preview Deploy]
-  GitHub --> VercelProd[Production Deploy]
-  VercelProd --> SupabaseProd[Supabase Production]
-  VercelPreview --> SupabaseStaging[Supabase Staging]
+  GitHub --> Host[TBD eligible Next.js host]
+  Host --> SupabaseDB[Supabase PostgreSQL - only after free-tier approval]
+  App --> Auth0[Auth0 identity]
   Local --> SupabaseLocal[Supabase Local CLI]
 ```
 
@@ -32,19 +31,20 @@ flowchart LR
 
 ## Supabase Setup
 
-### 1. Create Projects
+### 1. Local first; hosted project deferred
 
 | Environment | Purpose |
 |-------------|---------|
-| Production | Live users |
-| Staging (optional) | Preview deploys and E2E |
+| Hosted | Do not create until payment/card, pause, quota, backup, and recovery requirements are verified |
 | Local | `supabase start` for development |
 
-### 2. Enable Google Auth
+### 2. Configure Auth0 integration
 
-1. Supabase Dashboard → Authentication → Providers → Google
-2. Add Google OAuth Client ID and Secret from Google Cloud Console
-3. Configure redirect URLs
+1. Configure Google as an Auth0 social connection; do not enable Supabase Auth.
+2. Configure Supabase's Auth0 third-party integration using the current official guide.
+3. Add the required Auth0 Action claim and validate it against the Supabase integration.
+4. Set exact callback/logout URLs from the current Auth0 SDK documentation.
+5. Keep Auth0 client/session secrets server-side. Do not provision a hosted DB or paid feature merely to complete setup.
 
 ### 3. Run Migrations
 
@@ -79,11 +79,13 @@ Create bucket `avatars`:
 
 ---
 
-## Vercel Setup
+## Hosting evaluation
 
-### 1. Import Repository
+Vercel Hobby is a candidate only for eligible personal, non-commercial use; its official fair-use restriction does not establish eligibility for this product. Do not select it for production until actual project use fits its terms. Evaluate an alternative host using the same free-tier, runtime, data persistence, and cost criteria in the audit. Do not enable usage-based billing.
 
-1. Connect GitHub repo to Vercel
+### Vercel (conditional only)
+
+1. Connect the GitHub repo only after confirming Hobby eligibility and plan restrictions
 2. Framework preset: Next.js
 3. Package manager: pnpm
 
@@ -102,10 +104,13 @@ Set in Vercel Dashboard for Production, Preview, and Development:
 
 | Variable | Production | Preview | Development | Secret |
 |----------|------------|---------|-------------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Prod URL | Staging URL | Local | No |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Prod anon | Staging anon | Local | No |
-| `NEXT_PUBLIC_APP_URL` | `https://yourdomain.com` | Preview URL | `http://localhost:3000` | No |
-| `SUPABASE_SERVICE_ROLE_KEY` | Prod (CI only if needed) | Staging | Local | **Yes** |
+| `AUTH0_DOMAIN` | Tenant domain | Development tenant | Local dev tenant | No |
+| `AUTH0_CLIENT_ID` | App client ID | Development app | Local dev app | No |
+| `AUTH0_CLIENT_SECRET` | Secret | Secret | Secret | **Yes** |
+| `AUTH0_SECRET` | Secret | Secret | Secret | **Yes** |
+| `APP_BASE_URL` | Production URL | Preview URL | `http://localhost:3000` | No |
+| `NEXT_PUBLIC_SUPABASE_URL` | Only after hosted DB approval | Only after staging approval | Local | No |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Only after hosted DB approval | Only after staging approval | Local | No |
 
 **Never** prefix service role with `NEXT_PUBLIC_`.
 
@@ -113,9 +118,8 @@ Set in Vercel Dashboard for Production, Preview, and Development:
 
 1. Vercel → Project → Domains
 2. Add domain, configure DNS
-3. Update Google OAuth authorized origins
-4. Update Supabase redirect URLs
-5. Set `NEXT_PUBLIC_APP_URL` to custom domain
+3. Update Auth0 callback/logout URLs
+4. Set `APP_BASE_URL` to the canonical URL
 
 ---
 
@@ -141,26 +145,32 @@ pnpm install
 # Copy environment template
 cp .env.example .env.local
 
-# Start local Supabase
+# Start local Supabase (requires Docker)
 supabase start
 
 # Apply migrations and seed
 supabase db reset
 
-# Start Next.js
+# Run database/RLS regression tests
+supabase test db
+
+# Start Next.js (Auth0 credentials required only for live sign-in)
 pnpm dev
 ```
 
 ### `.env.example`
 
 ```env
+AUTH0_DOMAIN=
+AUTH0_CLIENT_ID=
+AUTH0_CLIENT_SECRET=
+AUTH0_SECRET=
+APP_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<local-anon-key>
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-SUPABASE_SERVICE_ROLE_KEY=<local-service-role-key>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<local-publishable-key>
 ```
 
-Copy anon and service role keys from `supabase start` output.
+Use local Supabase CLI output for the publishable key and local database credentials. Never use a service-role key in user-facing application paths. Unit/build checks must work without hosted credentials; a live Auth0 login needs a configured Auth0 tenant.
 
 ---
 
@@ -168,30 +178,29 @@ Copy anon and service role keys from `supabase start` output.
 
 ```mermaid
 flowchart TD
-  Commit[Push to branch] --> Preview[Vercel Preview Deploy]
-  Preview --> CI[CI: lint typecheck test]
+  Commit[Push to branch] --> CI[CI: lint typecheck test build]
   CI --> Review[Code Review]
   Review --> Merge[Merge to main]
-  Merge --> ProdDeploy[Vercel Production Deploy]
-  ProdDeploy --> Migrate[Apply DB migrations if any]
-  Migrate --> Smoke[Smoke test production]
+  Merge --> Deploy[Deploy only to approved eligible host]
+  Deploy --> Migrate[Apply reviewed DB migrations]
+  Migrate --> Smoke[Smoke test without enabling paid usage]
 ```
 
 ### Branch Strategy
 
 | Branch | Deploy Target |
 |--------|---------------|
-| `main` | Production |
-| `feature/*` | Preview URL per PR |
-| `milestone/*` | Preview (optional) |
+| `main` | Production only after host approval |
+| `feature/*` | Preview only if covered by an approved free plan |
+| `milestone/*` | Local validation by default |
 
 ### Database Migrations on Deploy
 
-1. Apply migrations to staging first
-2. Verify preview deploy against staging Supabase
-3. Merge PR
-4. Apply migrations to production **before** or **with** production deploy
-5. Backward-compatible migrations only (expand-contract pattern)
+1. Verify migrations against local PostgreSQL/Supabase first.
+2. Use a hosted staging project only after the free-tier and recovery review.
+3. Merge only after migration and RLS tests pass.
+4. Apply production migrations only after hosted production approval.
+5. Prefer backward-compatible migrations (expand-contract pattern).
 
 ---
 
@@ -243,13 +252,9 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm build
       - run: pnpm e2e
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL: http://localhost:3000
 ```
 
-Adjust E2E secrets per staging project setup.
+E2E must use deterministic auth/database mocks by default and need no cloud credentials. Do not add paid runners or secrets-dependent provider smoke tests as a required check.
 
 ---
 
@@ -257,12 +262,12 @@ Adjust E2E secrets per staging project setup.
 
 ### Before Launch
 
-- [ ] Production Supabase project created
+- [ ] Hosted database and deployment provider passed current free-tier, payment, terms, pause, backup, and recovery review
 - [ ] All migrations applied to production
-- [ ] Google OAuth configured with production URLs
-- [ ] Vercel env vars set for production
+- [ ] Auth0 Google connection and production callback/logout URLs verified
+- [ ] Deployment host is eligible under its current commercial-use terms
 - [ ] Custom domain configured (if applicable)
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` not in client bundle
+- [ ] No service-role key is used in user-facing code or bundled for the client
 - [ ] Super admin bootstrapped via SQL
 - [ ] Seed activity types in production
 - [ ] Storage bucket and RLS configured
@@ -270,7 +275,7 @@ Adjust E2E secrets per staging project setup.
 
 ### Post-Launch Monitoring
 
-- Vercel Analytics enabled
+- Approved host metrics only, with no unverified paid analytics
 - Supabase Dashboard: monitor DB size, auth users, API requests
 - Error logging review first 48 hours
 
@@ -280,8 +285,8 @@ Adjust E2E secrets per staging project setup.
 
 ### Application Rollback
 
-1. Vercel Dashboard → Deployments → Previous deployment → Promote to Production
-2. Instant rollback; no database change
+1. Use the approved host's documented rollback path.
+2. Verify rollback does not require a paid capability or destructive database reversal.
 
 ### Database Rollback
 
@@ -289,10 +294,11 @@ Adjust E2E secrets per staging project setup.
 2. If must rollback: apply down migration (maintain down scripts for critical migrations)
 3. Never rollback after destructive schema change without backup
 
-### Supabase Backups
+### Database recovery
 
-- Free tier: daily backups (7 day retention on Pro; verify free tier limits)
-- Before major migrations: manual dump via `supabase db dump`
+- Do not assume the Supabase Free tier includes managed backups; its current free plan and recovery behavior must be verified.
+- Before a major migration, create an export with the documented CLI/database tools and test restoring it locally.
+- Record hosted backup, retention, and restore behavior in [Repository Audit](./19_REPOSITORY_AUDIT.md) before production use.
 
 ---
 
@@ -302,7 +308,11 @@ Adjust E2E secrets per staging project setup.
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase API URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Public anon key (RLS enforced) |
-| `NEXT_PUBLIC_APP_URL` | Yes | Canonical app URL for OAuth |
+| `APP_BASE_URL` | Yes | Canonical app URL for Auth0 redirects |
+| `AUTH0_DOMAIN` | Yes | Auth0 tenant domain |
+| `AUTH0_CLIENT_ID` | Yes | Auth0 application ID |
+| `AUTH0_CLIENT_SECRET` | Yes | Server-only Auth0 secret |
+| `AUTH0_SECRET` | Yes | Server-only SDK session secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | Local/CI only | Bypasses RLS; server scripts only |
 
 Validate at build time in `src/lib/env.ts`.
@@ -311,13 +321,9 @@ Validate at build time in `src/lib/env.ts`.
 
 ## Free Tier Limits (Monitor)
 
-| Service | Free Tier Limit | Mitigation |
-|---------|-----------------|------------|
-| Vercel | 100GB bandwidth, serverless limits | Optimize images, cache public pages |
-| Supabase | 500MB DB, 50K MAU auth | Monitor user growth |
-| Google OAuth | Free | — |
+See dated quotas, restrictions, payment requirements, and sources in [Repository Audit](./19_REPOSITORY_AUDIT.md). Do not hardcode provider quotas in application behavior; re-verify before deployment. Never upgrade or accept overages without explicit authorization.
 
-Upgrade triggers documented in [Roadmap](./17_ROADMAP.md).
+If free limits no longer fit, stop and document the limitation; a paid upgrade requires explicit authorization.
 
 ---
 
@@ -325,6 +331,6 @@ Upgrade triggers documented in [Roadmap](./17_ROADMAP.md).
 
 | Milestone | Deliverable |
 |-----------|-------------|
-| M1 | Supabase project + env.local |
-| M17 | Vercel deploy + CI |
+| M1 | Local Supabase project + env.local |
+| M17 | Approved free-tier deployment + CI |
 | M18 | Production launch checklist |

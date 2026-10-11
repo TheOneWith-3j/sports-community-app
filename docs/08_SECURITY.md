@@ -13,7 +13,7 @@
 
 ## Overview
 
-Security practices aligned with OWASP recommendations, adapted for a Next.js + Supabase modular monolith. Defense in depth: middleware session validation, Zod input validation, RLS authorization, and secure UI patterns.
+Security practices aligned with OWASP recommendations, adapted for a Next.js + Auth0 + Supabase PostgreSQL modular monolith. Defense in depth: Auth0 SDK session validation, Zod input validation, RLS authorization, and secure UI patterns.
 
 ---
 
@@ -51,13 +51,13 @@ flowchart TB
 
 | Control | Implementation |
 |---------|----------------|
-| Identity provider | Google OAuth via Supabase Auth (trusted IdP) |
+| Identity provider | Auth0; Google is a federated Auth0 connection |
 | Password storage | N/A for MVP (OAuth only) |
-| Session tokens | HttpOnly cookies via `@supabase/ssr` |
-| JWT validation | Server uses `getUser()` — validates with Supabase |
-| Session fixation | Supabase issues new tokens on OAuth exchange |
-| Sign-out | Full session invalidation via `signOut()` |
-| Future MFA | Supabase TOTP when enabled |
+| Session tokens | Auth0 official Next.js SDK secure server session |
+| JWT validation | Auth0 SDK validates the session; Supabase third-party integration validates JWTs for RLS |
+| Session fixation | OIDC state/nonce/PKCE and SDK callback handling |
+| Sign-out | Auth0 SDK logout and application session clearing |
+| MFA | Verify Auth0 free-plan support and requirements before enabling |
 
 See [Authentication](./07_AUTHENTICATION.md).
 
@@ -161,13 +161,13 @@ MVP uses layered rate limiting:
 
 | Endpoint / Action | Limit | Implementation |
 |-------------------|-------|----------------|
-| Google OAuth attempts | 10/min per IP | Vercel middleware or Supabase Auth built-in |
+| Auth0 login attempts | Provider limits plus application protections | Auth0 and hosting limits must be verified |
 | `join_event` RPC | 5/min per user | Server Action check + Supabase rate limit |
 | `leave_event` RPC | 10/min per user | Server Action check |
 | Public event page | 100/min per IP | Vercel edge (optional) |
 | Login page | 20/min per IP | Middleware counter (in-memory or Upstash future) |
 
-**MVP implementation:** Server Action debounce + Supabase Auth rate limits. Document Upstash Redis for production hardening when traffic grows.
+**MVP implementation:** Use provider protections and safe application-level controls that do not introduce a paid dependency. An in-memory Server Action debounce is not a distributed rate limiter.
 
 **Abuse response:** Return `429 Too Many Requests` with `{ code: 'RATE_LIMITED' }`.
 
@@ -177,10 +177,10 @@ MVP uses layered rate limiting:
 
 | Secret | Storage | Never |
 |--------|---------|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Vercel env (public) | — |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel env (public) | — |
-| `SUPABASE_SERVICE_ROLE_KEY` | Vercel env (production only, server scripts) | Client, git, logs |
-| Google OAuth secrets | Supabase Dashboard | Application env |
+| `NEXT_PUBLIC_SUPABASE_URL` | Local env / approved host (public) | — |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Local env / approved host (publishable) | — |
+| `SUPABASE_SERVICE_ROLE_KEY` | Local admin/migration scripts only, if needed | Client, git, logs, user-triggered paths |
+| Auth0 client/session secrets | Deployment secret store | Browser, git, logs |
 | `.env.local` | Local dev only | Commit to git |
 
 **`.gitignore` must include:** `.env`, `.env.local`, `.env*.local`
@@ -193,18 +193,22 @@ Rotate service role key if ever exposed.
 
 See [Deployment](./13_DEPLOYMENT.md) for full matrix.
 
-Validation at startup (M1):
+Validate the Auth0 SDK configuration and Supabase database configuration when the corresponding runtime integration is used. Keep local build/unit-test workflows independent of hosted provider credentials; never invent a success-shaped fallback for a missing production secret.
 
 ```typescript
-// src/lib/env.ts — validate with Zod
+// Target server-only configuration — use Zod and the official SDK variable names
 const envSchema = z.object({
+  AUTH0_DOMAIN: z.string().min(1),
+  AUTH0_CLIENT_ID: z.string().min(1),
+  AUTH0_CLIENT_SECRET: z.string().min(1),
+  AUTH0_SECRET: z.string().min(1),
+  APP_BASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_APP_URL: z.string().url(),
 });
 ```
 
-Fail fast on missing env in production build.
+Fail explicitly at runtime when an enabled integration lacks configuration; provide separate test mocks rather than weakening production validation.
 
 ---
 
@@ -290,7 +294,7 @@ Managed by Supabase SSR adapter:
 | A04 Insecure Design | Addressed | FCFS atomic RPC, threat modeling in docs |
 | A05 Security Misconfiguration | Partial | Env validation, secure defaults; CSP future |
 | A06 Vulnerable Components | Ongoing | Dependabot, `pnpm audit` in CI |
-| A07 Auth Failures | Addressed | Supabase Auth, OAuth, session refresh |
+| A07 Auth Failures | Pending M3 verification | Auth0 SDK, OIDC callback, JWT validation, session lifecycle tests |
 | A08 Data Integrity Failures | Addressed | Server Actions origin check, signed OAuth |
 | A09 Logging Failures | Partial | Audit logs; Sentry future |
 | A10 SSRF | N/A | No user-controlled server-side fetch in MVP |
@@ -299,12 +303,7 @@ Managed by Supabase SSR adapter:
 
 ## Future MFA Support
 
-When enabled in Supabase:
-
-1. Enroll after primary auth in settings
-2. Challenge on login for enrolled users
-3. Backup codes stored by Supabase
-4. No application password to manage
+MFA is not assumed to be available on Auth0 Free. Verify plan entitlement, authentication UX, recovery process, and terms before enabling; do not silently add a paid feature.
 
 ---
 

@@ -6,6 +6,7 @@
 - [Coding Standards](./14_CODING_STANDARDS.md)
 - [System Architecture](./04_SYSTEM_ARCHITECTURE.md)
 - [Decisions](./18_DECISIONS.md)
+- [Repository and Free-Tier Audit](./19_REPOSITORY_AUDIT.md)
 - [Testing](./12_TESTING.md)
 
 ---
@@ -25,8 +26,13 @@ This guide ensures consistent, safe, milestone-driven implementation.
 3. **No scope creep** — Do not add court booking, payments, or notifications unless the milestone requires it.
 4. **Working increments** — Each milestone must produce a runnable, testable application state.
 5. **Follow docs over inference** — If docs conflict with training data, docs win.
-6. **Run quality checks** — `pnpm lint && pnpm typecheck && pnpm test` before marking done.
+6. **Run quality checks** — Run the scripts defined in `package.json` (at minimum `pnpm lint`, `pnpm typecheck`, and `pnpm build` where applicable); run unit/E2E tests once the M16 test tooling is in place.
 7. **No placeholders** — No `TODO`, `FIXME`, or stub implementations in committed code.
+8. **$0 ongoing cost** — Use only services that meet the current verified free allowance; trials and credits do not qualify. Never enable billing, upgrade, or incur charges without explicit authorization.
+9. **Verify before choosing** — Check official current pricing, quotas, required payment method, terms, and feature restrictions; record the dated evidence in [Repository Audit](./19_REPOSITORY_AUDIT.md).
+10. **Use production-suitable engineering** — Prefer maintained industry-standard frameworks and tooling, strict types, server-side authorization, tests, CI, dependency/secret checks, and local deterministic workflows. Paid tools are not a proxy for quality.
+11. **Single identity provider** — Auth0 is the target IdP; do not add Supabase Auth or trust browser-provided roles. Keep app RBAC in trusted PostgreSQL data enforced by RLS.
+12. **No AI attribution** — Do not add AI-agent watermarks or `Co-authored-by` trailers to code or commit messages.
 
 ---
 
@@ -56,7 +62,7 @@ Check git history, README progress section, or ask user. Find first incomplete m
 |----------------|------------------|
 | Any | `16_IMPLEMENTATION_PLAN.md` (current milestone section) |
 | Database | `05_DATABASE_DESIGN.md`, `06_RBAC.md` |
-| Auth | `07_AUTHENTICATION.md`, `08_SECURITY.md` |
+| Auth | `07_AUTHENTICATION.md`, `08_SECURITY.md`, `19_REPOSITORY_AUDIT.md` |
 | UI | `10_UI_SYSTEM.md`, `11_COMPONENT_LIBRARY.md` |
 | Actions | `09_API_STRATEGY.md`, `14_CODING_STANDARDS.md` |
 | Deploy | `13_DEPLOYMENT.md` |
@@ -230,6 +236,9 @@ For solo dev + AI, self-review checklist:
 - [ ] Mobile layout checked at 375px
 - [ ] No hardcoded colors outside tokens
 - [ ] No court booking logic introduced
+- [ ] No unapproved paid service, billing, or expiring free-trial dependency
+- [ ] External service entitlements verified from official documentation and recorded
+- [ ] Auth0 identity is distinct from database RBAC; server and RLS enforce authorization
 - [ ] Docs updated if milestone says so (M18 only)
 
 Optional: Use Cursor Bugbot or Security Review skills on PRs.
@@ -356,7 +365,8 @@ Create handoff note in commit message or brief markdown:
 - [ ] Tests pass (if M16+)
 - [ ] No TODO/FIXME in new code
 - [ ] Commit message matches plan suggestion
-- [ ] Did not edit docs/plan unless M18
+- [ ] Updated affected documentation when the milestone changes behavior, setup, architecture, security, or provider decisions
+- [ ] Updated milestone status only when its acceptance criteria are actually verified
 
 ---
 
@@ -371,20 +381,20 @@ Create handoff note in commit message or brief markdown:
 | Hardcoded Tailwind colors | Use CSS variable tokens |
 | Implementing REST API | Server Actions only for MVP |
 | Court booking tables | ADR-017 forbids |
-| `getSession()` on server | Use `getUser()` |
+| Supabase Auth session checks | Use the Auth0 SDK server session and trusted database profile mapping |
 | massive PR across milestones | One milestone per branch |
 
 ---
 
-## Prompt for Documentation Updates (M18 Only)
+## Documentation Updates
+
+Keep documentation aligned whenever a milestone changes behavior, architecture, setup, security, or provider decisions. Do not defer a required correction to M18.
 
 ```
-Update docs to reflect implemented MVP:
+At M18, update docs to reflect the implemented MVP:
 - README setup instructions
 - Any schema changes not reflected in 05_DATABASE_DESIGN.md
 - Mark milestones complete in 16_IMPLEMENTATION_PLAN.md progress section
-
-Do not rewrite docs unnecessarily.
 ```
 
 ---

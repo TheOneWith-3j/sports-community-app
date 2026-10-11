@@ -345,10 +345,11 @@ enabled = false
 enabled = false
 # project_id = "my-firebase-project"
 
-# Use Auth0 as a third-party provider alongside Supabase Auth.
+# Auth0 is the application's only identity provider. Configure the local
+# tenant details and enable this integration only when an Auth0 tenant exists.
 [auth.third_party.auth0]
 enabled = false
-# tenant = "my-auth0-tenant"
+# tenant = "<Auth0 tenant ID>"
 # tenant_region = "us"
 
 # Use AWS Cognito (Amplify) as a third-party provider alongside Supabase Auth.

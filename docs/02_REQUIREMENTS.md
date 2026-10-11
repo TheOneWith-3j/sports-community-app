@@ -28,13 +28,13 @@ Functional and non-functional requirements for the Sports Community Platform MVP
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-AUTH-01 | Users shall sign in with Google OAuth via Supabase Auth | MVP |
+| FR-AUTH-01 | Users shall sign in with Google through Auth0 as the single identity provider | MVP |
 | FR-AUTH-02 | Users shall sign out and clear session | MVP |
 | FR-AUTH-03 | Unauthenticated users accessing protected routes shall redirect to login | MVP |
 | FR-AUTH-04 | Session shall persist across browser restarts (secure cookies) | MVP |
-| FR-AUTH-05 | Architecture shall support adding Phone OTP without schema changes | Future |
-| FR-AUTH-06 | Architecture shall support adding Email OTP without schema changes | Future |
-| FR-AUTH-07 | MFA shall be supported in future auth provider configuration | Future |
+| FR-AUTH-05 | No second identity provider shall be introduced; additional methods require product need and free-tier/terms review | MVP |
+| FR-AUTH-06 | Application roles shall be stored server-side and enforced by PostgreSQL RLS, not browser values | MVP |
+| FR-AUTH-07 | Auth0 session/JWT validation and Auth0-subject-to-profile mapping shall be verified at the server/data boundary | MVP |
 
 ### FR-PROFILE: User Profile
 
@@ -220,8 +220,8 @@ Detailed phasing: [Roadmap](./17_ROADMAP.md).
 
 | ID | Requirement |
 |----|-------------|
-| NFR-DEPLOY-01 | Deploy to Vercel with preview environments |
-| NFR-DEPLOY-02 | Supabase project for staging and production |
+| NFR-DEPLOY-01 | Deploy to a host compatible with Next.js and product use; verify free-tier terms before selection |
+| NFR-DEPLOY-02 | Use local PostgreSQL for development; hosted environments require verified free-tier and recovery approval |
 | NFR-DEPLOY-03 | Environment variable documentation |
 | NFR-DEPLOY-04 | CI runs lint, typecheck, tests on PR |
 
@@ -229,7 +229,7 @@ Detailed phasing: [Roadmap](./17_ROADMAP.md).
 
 | ID | Requirement |
 |----|-------------|
-| NFR-COST-01 | MVP runnable on Vercel + Supabase free tiers |
+| NFR-COST-01 | MVP buildable, testable, and locally deployable at $0; hosted free-tier use must be verified |
 | NFR-COST-02 | No paid third-party services required for MVP |
 
 ---
@@ -244,10 +244,10 @@ Detailed phasing: [Roadmap](./17_ROADMAP.md).
 | Components | shadcn/ui | Latest |
 | Animation | Framer Motion | Latest |
 | Forms | React Hook Form + Zod | Latest |
-| Backend | Supabase | Managed |
+| Backend | Next.js Server Actions + Supabase PostgreSQL | Modular monolith |
 | Database | PostgreSQL (via Supabase) | 15+ |
-| Auth | Supabase Auth | Google MVP |
-| Hosting | Vercel | Free tier |
+| Auth | Auth0 | Google via Auth0; Supabase Auth is not used |
+| Hosting | Not yet selected | Verify eligibility and terms; Vercel Hobby is personal-use only |
 | Package manager | pnpm | Latest |
 | Icons | Lucide | Latest |
 | Unit tests | Vitest | Latest |

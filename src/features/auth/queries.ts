@@ -1,15 +1,29 @@
+import { getAuth0Client } from "@/lib/auth0";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function getCurrentUser() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const session = await getAuth0Client().getSession();
+  return session?.user ?? null;
+}
 
-  if (error || !user) {
+export async function ensureCurrentProfile(): Promise<string | null> {
+  const user = await getCurrentUser();
+  if (!user) {
     return null;
   }
 
-  return user;
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("ensure_current_profile");
+
+  if (error) {
+    throw new Error("Unable to resolve the authenticated application profile.", {
+      cause: error,
+    });
+  }
+
+  if (typeof data !== "string") {
+    throw new Error("The authenticated application profile could not be resolved.");
+  }
+
+  return data;
 }
