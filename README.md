@@ -1,175 +1,36 @@
-# Sports Community Platform
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A premium event participation management platform for sports communities — starting with badminton and pickleball, designed to support any activity or sport.
+## Getting Started
 
-**Replace WhatsApp participant lists.** Not a court booking system.
-
----
-
-## Vision
-
-Community admins create events and share a link on WhatsApp. Members join first-come-first-served. Waitlists and automatic promotion on cancellation eliminate manual list editing. Admins manage attendance from a mobile-first dashboard.
-
-See [docs/01_PRODUCT_VISION.md](./docs/01_PRODUCT_VISION.md) for full product vision.
-
----
-
-## Goals
-
-- Ship MVP quickly with beautiful UX
-- Simple modular monolith architecture
-- Secure (RLS-enforced RBAC)
-- Scalable schema for future growth
-- Free tier viable (Vercel + Supabase)
-- AI-buildable milestone-by-milestone
-
----
-
-## MVP Features
-
-| Feature | Description |
-|---------|-------------|
-| Authentication | Google OAuth via Supabase |
-| User Profile | Display name, avatar, phone |
-| Community | Admin creates and manages one community |
-| Events | Create, publish, share link, cancel |
-| Join / Leave | FCFS join with atomic capacity enforcement |
-| Waitlist | Auto-assignment when full |
-| Auto-Promotion | First waitlisted promoted on cancellation |
-| Participant List | Ordered list with avatars |
-| Attendance | Admin marks present / absent / no-show |
-| Admin Dashboard | Upcoming events, quick actions |
-| UI | Responsive, dark mode default, premium polish |
-| RBAC | Guest, Member, Admin, Super Admin |
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js (App Router), TypeScript, Tailwind CSS |
-| UI | shadcn/ui, Framer Motion, Lucide icons |
-| Forms | React Hook Form + Zod |
-| Backend | Supabase (PostgreSQL, Auth, RLS) |
-| Hosting | Vercel |
-| Package Manager | pnpm |
-| Testing | Vitest, Playwright |
-| Lint / Format | ESLint, Prettier |
-
----
-
-## Architecture
-
-Modular monolith: single Next.js app on Vercel, Supabase for data and auth. Server Components by default. Server Actions for mutations. PostgreSQL RPC for atomic join/waitlist logic. RLS enforces all authorization.
-
-```mermaid
-flowchart LR
-  User --> Vercel[Next.js on Vercel]
-  Vercel --> Supabase[Supabase PostgreSQL + Auth]
-```
-
-Full architecture: [docs/04_SYSTEM_ARCHITECTURE.md](./docs/04_SYSTEM_ARCHITECTURE.md)
-
----
-
-## Repository Structure
-
-```
-sports-community-app/
-├── docs/                 # Project documentation (start here)
-├── .cursor/rules/        # AI development guardrails
-├── .github/              # Copilot instructions, CI (M17)
-├── supabase/             # Migrations and seed (M2+)
-└── src/                  # Application code (M0+)
-    ├── app/              # Next.js App Router
-    ├── components/       # UI and domain components
-    ├── features/         # Feature modules
-    ├── lib/              # Supabase, validations, utils
-    └── types/            # TypeScript types
-```
-
----
-
-## Documentation
-
-All documentation lives in [`docs/`](./docs/README.md).
-
-| Start here | Document |
-|------------|----------|
-| Building the app | [Implementation Plan](./docs/16_IMPLEMENTATION_PLAN.md) |
-| AI sessions | [AI Development Guide](./docs/15_AI_DEVELOPMENT_GUIDE.md) |
-| Product scope | [Requirements](./docs/02_REQUIREMENTS.md) |
-| Database | [Database Design](./docs/05_DATABASE_DESIGN.md) |
-| UI design | [UI System](./docs/10_UI_SYSTEM.md) |
-
-**Full index:** [docs/README.md](./docs/README.md)
-
----
-
-## Development Workflow
-
-### Current Status
-
-**Documentation bootstrap complete.** Application code begins at Milestone M0.
-
-### Getting Started (After M0)
+First, run the development server:
 
 ```bash
-# Prerequisites: Node 20+, pnpm, Supabase CLI, Docker
-
-git clone <repo-url>
-cd sports-community-app
-pnpm install
-cp .env.example .env.local
-# Fill in Supabase credentials
-
-supabase start
-supabase db reset
+npm run dev
+# or
+yarn dev
+# or
 pnpm dev
+# or
+bun dev
 ```
 
-Full setup instructions will be finalized in M18. See [Deployment](./docs/13_DEPLOYMENT.md).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Milestone Workflow
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-1. Read current milestone in [Implementation Plan](./docs/16_IMPLEMENTATION_PLAN.md)
-2. Create branch: `milestone/M{N}-{name}`
-3. Implement scope only
-4. Run `pnpm lint && pnpm typecheck && pnpm test`
-5. Complete manual test checklist
-6. Commit with suggested message from plan
-7. Merge to main
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-### AI-Assisted Development
+## Learn More
 
-This repository is optimized for AI-first development. Cursor rules in `.cursor/rules/` enforce architecture constraints. Start each session with:
+To learn more about Next.js, take a look at the following resources:
 
-```
-Read docs/16_IMPLEMENTATION_PLAN.md and implement the next incomplete milestone.
-Follow docs/15_AI_DEVELOPMENT_GUIDE.md.
-```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
----
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Key Product Rules
+## Deploy on Vercel
 
-1. **Not a court booking system** — event participation only
-2. **FCFS join** — atomic, never overbook capacity
-3. **Auto waitlist promotion** — synchronous on leave/cancel
-4. **RLS is authoritative** — UI hiding is not security
-5. **Mobile-first** — primary use is WhatsApp links on phones
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
----
-
-## License
-
-Private project. All rights reserved. License terms will be published if the project is open-sourced.
-
----
-
-## Contributing
-
-Single maintainer + AI workflow for MVP. External contribution guidelines will be published after public launch.
-
-For architectural changes, add an ADR to [docs/18_DECISIONS.md](./docs/18_DECISIONS.md).
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
