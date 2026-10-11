@@ -17,7 +17,9 @@ Event participation management for sports communities. Admins share event links,
 
 M0–M2 are complete. M3 is in progress: the application now uses the Auth0 SDK, maps verified Auth0 issuer/subject claims to internal UUID profiles, and has a forward migration for PostgreSQL RLS/RPC identity checks. The code passes lint, typecheck, and production build; all migrations applied successfully to a temporary local PostgreSQL instance. All 21 database regression assertions also passed against local PostgreSQL using a temporary TAP-compatible test shim.
 
-**M3 is not complete yet.** Live Auth0 sign-in and the real Supabase Auth0 third-party JWT integration still require an Auth0 tenant and Google connection, plus running the suite with Supabase's actual pgTAP runner. M4 and production deployment remain blocked until those checks pass. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md), [authentication setup](./docs/07_AUTHENTICATION.md), and [repository audit](./docs/19_REPOSITORY_AUDIT.md).
+**Auth0 application provisioned.** The Auth0 MCP created the Regular Web Application, saved credentials in ignored `.env.local`, and registered the local callback/logout URLs. The local Supabase Auth0 tenant config is enabled. You still need to enable the Google connection, deploy/attach the Post-Login Action, and configure local Supabase API values.
+
+**M3 is not complete yet.** Live Auth0 sign-in and the real Supabase Auth0 third-party JWT integration still need verification, including running the suite with Supabase's actual pgTAP runner. M4 and production deployment remain blocked until those checks pass. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md), [authentication setup](./docs/07_AUTHENTICATION.md), and [repository audit](./docs/19_REPOSITORY_AUDIT.md).
 
 ## Local development
 
@@ -25,11 +27,11 @@ Requirements: Node.js 20+, pnpm 9+, Supabase CLI, and Docker only if running the
 
 ```bash
 pnpm install
-cp .env.example .env.local
+cp -n .env.example .env.local
 pnpm dev
 ```
 
-The public landing page and quality checks work without cloud credentials. To sign in locally, configure the Auth0 application and local Supabase third-party integration using [the authentication setup guide](./docs/07_AUTHENTICATION.md), then populate `.env.local`. Never paste secrets into issues, pull requests, or chat.
+If `.env.local` already exists, do not overwrite it; add only missing keys. The public landing page and quality checks work without cloud credentials. To sign in locally, finish Google connection and Action setup and configure local Supabase API values using [the authentication setup guide](./docs/07_AUTHENTICATION.md). Never paste secrets into issues, pull requests, or chat.
 
 For local database, migration, and database-test work:
 
