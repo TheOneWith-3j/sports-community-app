@@ -1,6 +1,8 @@
-# Sports Community Platform
+# RallyNook
 
-Event participation management for sports communities. Admins share event links, members join first-come-first-served, full events use a waitlist, and admins record attendance. This is **not** a court-booking system.
+Your corner for community sports events. Admins share event links, members join first-come-first-served, full events use a waitlist, and admins record attendance. This is **not** a court-booking system.
+
+The repository is still named `sports-community-app`; RallyNook is the product brand.
 
 ## Technology
 
@@ -17,7 +19,7 @@ Event participation management for sports communities. Admins share event links,
 
 M0–M2 are complete. M3 is in progress: the application now uses the Auth0 SDK, maps verified Auth0 issuer/subject claims to internal UUID profiles, and has a forward migration for PostgreSQL RLS/RPC identity checks. The code passes lint, typecheck, and production build; all migrations applied successfully to a temporary local PostgreSQL instance. All 21 database regression assertions also passed against local PostgreSQL using a temporary TAP-compatible test shim.
 
-**Auth0 application provisioned.** The Auth0 MCP created the Regular Web Application, saved credentials in ignored `.env.local`, and registered the local callback/logout URLs. The local Supabase Auth0 tenant config is enabled. You still need to enable the Google connection, deploy/attach the Post-Login Action, and configure local Supabase API values.
+**Auth0 application provisioned.** The Auth0 MCP created the Regular Web Application, saved credentials in ignored `.env.local`, and registered the local callback/logout URLs. The application display name is now RallyNook; the tenant domain is unchanged. The local Supabase Auth0 tenant config is enabled. You still need to enable the Google connection, deploy/attach the Post-Login Action, and configure local Supabase API values.
 
 **M3 is not complete yet.** Live Auth0 sign-in and the real Supabase Auth0 third-party JWT integration still need verification, including running the suite with Supabase's actual pgTAP runner. M4 and production deployment remain blocked until those checks pass. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md), [authentication setup](./docs/07_AUTHENTICATION.md), and [repository audit](./docs/19_REPOSITORY_AUDIT.md).
 

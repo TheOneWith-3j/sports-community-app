@@ -1,6 +1,6 @@
 # Documentation Index
 
-Single source of truth for the Sports Community Platform — a premium event participation management system for sports communities (badminton, pickleball, and any activity). **This is not a court booking system.**
+Single source of truth for RallyNook — a premium event participation management system for sports communities (badminton, pickleball, and any activity). **This is not a court booking system.**
 
 ---
 
@@ -116,4 +116,6 @@ flowchart LR
 
 ## Repository Status
 
-**Current phase:** M0–M2 and an M3 Supabase Auth implementation exist. M3 must be reworked to the Auth0 identity boundary and the associated database/RLS mapping before M4 proceeds. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
+**Current phase:** M0–M2 are implemented; M3 Auth0 migration and the associated database/RLS mapping are in progress. Live sign-in and Auth0-to-Supabase JWT validation must pass before M4 proceeds. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
+
+**Product brand:** RallyNook. Preliminary market scan only; see [Product Vision](./01_PRODUCT_VISION.md) and [ADR-022](./18_DECISIONS.md#adr-022-rallynook-product-brand). Formal trademark clearance is outstanding.

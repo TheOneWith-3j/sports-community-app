@@ -27,11 +27,11 @@ export default function Home() {
         <header className="mb-12 flex items-center justify-between rounded-full border border-border/80 bg-card/70 px-4 py-3 backdrop-blur-md shadow-sm sm:px-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-gradient-from to-brand-gradient-to text-sm font-bold text-slate-950 shadow-lg shadow-brand-primary/30">
-              SC
+              RN
             </div>
             <div>
-              <p className="text-label text-foreground">Sports Community</p>
-              <p className="text-body-sm text-muted-foreground">Event participation platform</p>
+              <p className="text-label text-foreground">RallyNook</p>
+              <p className="text-body-sm text-muted-foreground">Your corner for community sports</p>
             </div>
           </div>
           <Button variant="secondary" className="hidden sm:inline-flex">
@@ -51,7 +51,7 @@ export default function Home() {
                 Replace WhatsApp list chaos with a cleaner way to run community events.
               </h1>
               <p className="max-w-xl text-body-lg text-muted-foreground">
-                Sports Community App helps admins publish events, members join in seconds, and everyone stays informed with waitlists, auto-promotion, and attendance tracking.
+                RallyNook helps admins publish events, members join in seconds, and everyone stays informed with waitlists, auto-promotion, and attendance tracking.
               </p>
             </div>
 

@@ -1,7 +1,7 @@
 # Repository and Free-Tier Technology Audit
 
 **Last verified:** 2026-10-11
-**Scope:** Sports Community Platform. This is an event participation product, not a court-booking system or the unrelated Kyron Medical AI Assistant.
+**Scope:** RallyNook. This is an event participation product, not a court-booking system or the unrelated Kyron Medical AI Assistant.
 
 ## Budget and quality requirements
 

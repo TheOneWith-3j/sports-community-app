@@ -15,7 +15,7 @@
 
 ## Overview
 
-The Sports Community Platform is a **modular monolith**: a single Next.js application backed by Supabase PostgreSQL and RLS, with Auth0 as its single identity provider. Hosting remains subject to free-tier and product-eligibility review in the [Repository Audit](./19_REPOSITORY_AUDIT.md). There are no microservices. Feature boundaries are enforced by folder structure and module exports, not network boundaries.
+RallyNook is a **modular monolith**: a single Next.js application backed by Supabase PostgreSQL and RLS, with Auth0 as its single identity provider. Hosting remains subject to free-tier and product-eligibility review in the [Repository Audit](./19_REPOSITORY_AUDIT.md). There are no microservices. Feature boundaries are enforced by folder structure and module exports, not network boundaries.
 
 **This is not a court booking system.** The architecture models event participation, not facility reservations.
 

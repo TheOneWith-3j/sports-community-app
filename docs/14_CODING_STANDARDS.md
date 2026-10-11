@@ -13,7 +13,7 @@
 
 ## Overview
 
-Coding conventions for the Sports Community Platform. All code — human or AI generated — must follow these standards for consistency and maintainability.
+Coding conventions for RallyNook. All code — human or AI generated — must follow these standards for consistency and maintainability.
 
 ---
 

@@ -69,7 +69,7 @@ exports.onExecutePostLogin = async (_event, api) => {
 };
 ```
 
-Enable the Action in the Login flow. The matching Auth0 tenant must also be configured in the local Supabase `[auth.third_party.auth0]` settings; keep the integration disabled until the real tenant ID and region are known.
+Attach the deployed Action to the **Login / Post Login (`post-login`) trigger**. In the current Auth0 Dashboard, open **Actions → Triggers → Login** and add the Action there; older instructions may call this **Actions → Flows → Login**. Ensure the tenant ID and region match the local Supabase `[auth.third_party.auth0]` settings.
 
 - Verify the Auth0 issuer, JWT signature, expiry, intended application audience, and required Supabase `role: authenticated` claim through the official integration and SDK.
 - Missing, invalid, or expired credentials must fail closed for protected operations.
@@ -140,7 +140,7 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
    };
    ```
 
-   Deploy the Action, then attach it under **Actions → Flows → Login**. The `role` claim belongs on the ID token; do not set application roles in Auth0.
+   Deploy the Action. Then open **Actions → Triggers → Login** and attach the deployed Action to the post-login trigger. Older dashboard instructions may refer to **Actions → Flows → Login**; the current dashboard groups these under Triggers. The `role` claim belongs on the ID token; do not set application roles in Auth0.
 5. The local Supabase Auth0 integration is enabled in `supabase/config.toml` for tenant `dev-viqq4bj1e522n2ob` in region `us`.
 6. Auth0 MCP saved `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`, and `APP_BASE_URL` to ignored `.env.local`. Do not overwrite, open, or share that file. Generate a new session secret only for another environment:
 
@@ -162,6 +162,17 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
    Visit `http://localhost:3000/login`, complete Google sign-in, confirm `/dashboard` loads, then sign out and confirm the protected route redirects back to sign-in.
 
 The Auth0 tenant/client now exist; enabling Google and attaching the Post-Login Action remain dashboard steps. The local Supabase stack and its environment values are also required for end-to-end sign-in. None of these steps require enabling billing.
+
+### Auth0 tenant name and Management API scopes
+
+The Auth0 **application display name** is RallyNook. The tenant's technical name/domain (`dev-viqq4bj1e522n2ob.us.auth0.com`) is a separate identifier and is unchanged. Auth0 does not provide an in-place rename for that tenant identifier; using a different tenant slug means creating a new tenant and migrating its applications, connections, Actions, and settings. Do not recreate this tenant just to change the product label.
+
+An Auth0 custom domain can present a branded login URL, but it masks rather than renames the underlying tenant domain. Auth0's [custom-domain documentation](https://auth0.com/docs/customize/custom-domains) says a free custom domain requires a valid payment card on file for verification, though Auth0 says it will not charge the card. It is optional and is not configured for this project.
+
+An Auth0 MCP error that requests `read:actions` is about the MCP's authorization to the **Auth0 Management API**, not this application's OIDC scopes or API permissions:
+
+- If the MCP uses managed sign-in, reconnect/reauthorize it with the required Management API scope. If the consent flow does not let you choose scopes, the MCP provider must request `read:actions`; creating or changing Actions additionally requires the appropriate `create:actions` and/or `update:actions` permissions.
+- If you operate the MCP's own Machine-to-Machine application, authorize only the required permissions under **Applications → [MCP application] → APIs → Auth0 Management API**. Do not add Management API scopes to RallyNook's Regular Web Application.
 
 ## Testing
 

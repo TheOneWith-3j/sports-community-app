@@ -16,7 +16,7 @@
 
 ## Overview
 
-Functional and non-functional requirements for the Sports Community Platform MVP. Requirements are tagged **MVP** or **Future**. MVP requirements map to milestones in [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
+Functional and non-functional requirements for the RallyNook MVP. Requirements are tagged **MVP** or **Future**. MVP requirements map to milestones in [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
 
 **Explicit exclusion:** This platform is **not a court booking system**. No facility inventory, slot reservation, or booking payment flows in MVP.
 

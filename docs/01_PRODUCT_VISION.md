@@ -12,7 +12,7 @@
 
 ## Vision Statement
 
-Build the premium event participation platform that replaces manually edited WhatsApp participant lists for sports communities — starting with badminton and pickleball, designed to serve any activity or sport worldwide.
+Build RallyNook, the premium event participation platform that replaces manually edited WhatsApp participant lists for sports communities — starting with badminton and pickleball, designed to serve any activity or sport worldwide.
 
 ---
 
@@ -191,4 +191,6 @@ Full tokens and component specs: [UI System](./10_UI_SYSTEM.md), [Component Libr
 
 ## Product Name
 
-Working product name: **Sports Community Platform**. Repository name: `sports-community-app`. A consumer-facing brand name may be chosen before public launch.
+Product brand: **RallyNook**. Positioning: a welcoming home for community sports events, focused on event participation rather than court or facility booking. The repository remains `sports-community-app`.
+
+The name was selected after a preliminary market scan on 2026-10-11. “RallyNook” combines the energy of a sports rally with a welcoming community space. Exact-name web and app-store searches did not surface an obvious direct competitor. [Verisign RDAP](https://rdap.verisign.com/com/v1/domain/rallynook.com) returned no registration record for `rallynook.com` at the time checked; a 404 is not a reservation or guarantee of purchasability. Broader web results include existing “RALLY” marks, so this is not trademark clearance. Check the [USPTO trademark search](https://tmsearch.uspto.gov/search/search-results?query=RallyNook), domain, and social handles before public launch.

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This document records every major technical and product decision for the Sports Community Platform. All future implementation must align with these records. When revisiting a decision, add a new ADR with a superseding status rather than editing history.
+This document records every major technical and product decision for RallyNook. All future implementation must align with these records. When revisiting a decision, add a new ADR with a superseding status rather than editing history.
 
 ## Related Documents
 
@@ -447,6 +447,33 @@ This document records every major technical and product decision for the Sports 
 - Local development, lint, typecheck, unit tests, and builds must not require provider credentials.
 
 **Future Revisit Criteria:** A product requirement or verified provider-plan change materially alters identity, tenant authorization, recovery, or free-tier suitability. Any change requires a new ADR and re-audit before adoption.
+
+---
+
+## ADR-022: RallyNook Product Brand
+
+**Status:** Accepted (preliminary market scan; formal trademark clearance remains outstanding)
+
+**Context:** The product needs a memorable consumer-facing name that fits casual sports communities and event participation without suggesting facility or court booking.
+
+**Decision:** Use **RallyNook** as the product brand. Keep `sports-community-app` as the Git repository name. Update user-visible product copy, project metadata, and the Auth0 application's display name; do not change the Auth0 tenant identifier.
+
+**Alternatives Considered:**
+
+| Name | Finding in preliminary scan |
+|---|---|
+| RallyRoster | `.com` domain already registered |
+| RallyNest | `.com` domain already registered |
+| RallyCrew | Existing sports-community application/brand |
+| RallyNook | Exact-name searches did not surface an obvious direct product conflict; [Verisign RDAP](https://rdap.verisign.com/com/v1/domain/rallynook.com) returned no `.com` registration record on 2026-10-11. Broader results include unrelated “RALLY” marks; formal trademark clearance is outstanding. |
+
+**Consequences:**
+
+- Brand phrasing emphasizes community events, RSVPs, and participation—not court reservations.
+- Domain and trademark status must be independently verified before public launch; preliminary search results are not legal clearance.
+- The existing Auth0 tenant URL remains unchanged. Its application display name can match the product brand.
+
+**Future Revisit Criteria:** Formal trademark review identifies a conflict, the domain/brand cannot be secured, or user research shows the name is confusing.
 
 ---
 

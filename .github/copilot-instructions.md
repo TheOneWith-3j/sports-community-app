@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-Sports Community Platform — event participation management for sports communities. **Not a court booking system.**
+RallyNook — event participation management for sports communities. **Not a court booking system.**
 
 ## Source of Truth
 
@@ -68,4 +68,4 @@ Admins share event links on WhatsApp. Members join FCFS. Full events auto-waitli
 
 ## Status
 
-M0–M2 are implemented; local database startup/migration execution was not verified because Docker/Podman was unavailable. M3 currently uses Supabase Auth and must be migrated to the Auth0 target before M4 proceeds.
+M0–M2 are implemented. M3 Auth0 migration is in progress; live Auth0 sign-in, Supabase JWT integration, and the actual pgTAP runner remain unverified before M4 proceeds.

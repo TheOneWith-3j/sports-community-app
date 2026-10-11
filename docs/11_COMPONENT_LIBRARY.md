@@ -10,7 +10,7 @@
 
 ## Overview
 
-Reusable component specifications for the Sports Community Platform. All components follow [UI System](./10_UI_SYSTEM.md) tokens. Built on shadcn/ui primitives in `src/components/ui/`; domain components in `src/components/domain/` and `src/components/layout/`.
+Reusable component specifications for RallyNook. All components follow [UI System](./10_UI_SYSTEM.md) tokens. Built on shadcn/ui primitives in `src/components/ui/`; domain components in `src/components/domain/` and `src/components/layout/`.
 
 **Conventions:**
 
