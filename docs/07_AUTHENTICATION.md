@@ -149,7 +149,7 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
    ```
 
    Store that output only as `AUTH0_SECRET` in another environment's ignored `.env.local`. Never send or commit the secret.
-7. Install/start the local Supabase stack using the [Deployment guide](./13_DEPLOYMENT.md). Run `pnpm exec supabase status` and copy its local **API URL** and **publishable/anon key** into `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. Local Studio is available at the Studio URL reported by the CLI.
+7. For hosted integration, use the Supabase project URL and publishable key from the project's Connect dialog in ignored `.env.local`; these have been added for project `dshlkfieydhxpkffcrfo`. For local database tests, start the CLI stack and use `pnpm exec supabase status` to obtain the local API URL and publishable key instead.
 8. From the repository root, run:
 
    ```bash
@@ -161,7 +161,7 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
 
    Visit `http://localhost:3000/login`, complete Google sign-in, confirm `/dashboard` loads, then sign out and confirm the protected route redirects back to sign-in.
 
-The Auth0 tenant/client, Google connection, and deployed/attached Action are configured. Complete a real Google sign-in, verify the ID token contains the required Supabase role claim, and run the local Supabase database/JWT tests. The current validation environment has neither the Supabase CLI nor an available Docker engine, so local Supabase startup remains blocked until those tools are installed and running. None of these steps require enabling billing.
+The Auth0 tenant/client, Google connection, and deployed/attached Action are configured. Local browser smoke checks confirm the login page offers Google, an unauthenticated `/dashboard` request reaches Auth0 Universal Login, safe local return paths are retained, and external return URLs fall back to `/dashboard`. The owner-created hosted Supabase project (`dshlkfieydhxpkffcrfo`) and supplied publishable key are configured locally, but a read-only API request returned `401 Invalid API key`; re-copy the project's current publishable key from its Connect dialog before integration testing. Remaining: sign into the Supabase Dashboard, verify the project and key, enable Auth0 under **Authentication → Third-Party Auth**, complete real Google sign-in, verify the ID token's `role: authenticated` claim, apply/test schema migrations, and run hosted or local Supabase JWT/RLS tests. The Supabase CLI is pinned in the project and available with `pnpm exec supabase`; local startup remains blocked because the current Podman runtime failed to start the Supabase stack. None of these steps require enabling billing.
 
 ### Auth0 tenant name and Management API scopes
 

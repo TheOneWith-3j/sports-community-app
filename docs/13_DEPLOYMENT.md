@@ -12,7 +12,7 @@
 
 ## Overview
 
-Run and test the Next.js application locally without paid services. Auth0 is the identity provider; Supabase migrations/PostgreSQL remain the local development and test target, not an approved always-available hosted database. Supabase Free can pause after a week of inactivity. Neon Free and Netlify Free are only candidates for an experiment; neither is approved as an uptime-guaranteed production stack. See [Repository Audit](./19_REPOSITORY_AUDIT.md). Never enable billing or paid resources without explicit authorization.
+Run and test the Next.js application locally without paid services. Auth0 is the identity provider; the owner has created a Supabase Free PostgreSQL project for integration tests and an early pilot. Supabase Free can pause after a week of low activity and may need manual Dashboard restoration. This is not an uptime guarantee. See [Repository Audit](./19_REPOSITORY_AUDIT.md). Never enable billing or paid resources without explicit authorization.
 
 ---
 
@@ -22,7 +22,7 @@ Run and test the Next.js application locally without paid services. Auth0 is the
 flowchart LR
   Dev[Local Dev] --> GitHub[GitHub Repo]
   GitHub --> Host[TBD eligible Next.js host]
-  Host --> SupabaseDB[Supabase PostgreSQL - only after free-tier approval]
+  Host --> SupabaseDB[Supabase PostgreSQL - Free project for pilot]
   App --> Auth0[Auth0 identity]
   Local --> SupabaseLocal[Supabase Local CLI]
 ```
@@ -31,12 +31,23 @@ flowchart LR
 
 ## Supabase Setup
 
-### 1. Local first; hosted project deferred
+### 1. Hosted project and local test stack
 
 | Environment | Purpose |
 |-------------|---------|
-| Hosted | No project is approved yet; evaluate documented pause/cold-start behavior, quotas, payment/card requirements, backups, and recovery before provisioning |
+| Hosted | Owner-created Free project `dshlkfieydhxpkffcrfo`; Auth0 provider and migrations still need configuring |
 | Local | `pnpm exec supabase start` for development when a compatible container runtime is available |
+
+### Hosted project setup
+
+The project owner created the hosted Supabase project and supplied its URL and publishable key. They are stored in ignored `.env.local`; do not display or commit those values. A read-only request to the API currently returns `401 Invalid API key`, so re-copy the project's publishable key from **Connect** before using it.
+
+1. Confirm the project remains on Free; do not choose paid compute, add a paid add-on, or enable billing.
+2. In **Authentication → Third-Party Auth**, add Auth0 using tenant `dev-viqq4bj1e522n2ob` and region `us`, matching `supabase/config.toml`. Supabase Auth must not be enabled as the app identity provider.
+3. Apply the project migrations only after reviewing them. Never put the service-role key in browser code or user-triggered application paths.
+4. Complete a real Auth0/Google sign-in and test that a valid ID token is accepted by Supabase RLS while invalid or role-mismatched JWTs are rejected.
+
+Free projects may be paused after a week of low activity. Supabase documents restoring a paused project from the Dashboard; do not assume the next application request automatically resumes it. While paused, database-dependent features will be unavailable. Free projects do not include downloadable managed database backups, so keep regular CLI exports and test recovery separately.
 
 ### 2. Configure Auth0 integration
 
@@ -110,7 +121,7 @@ Set in Vercel Dashboard for Production, Preview, and Development:
 | `AUTH0_SECRET` | Secret | Secret | Secret | **Yes** |
 | `APP_BASE_URL` | Production URL | Preview URL | `http://localhost:3000` | No |
 | `NEXT_PUBLIC_SUPABASE_URL` | Only after hosted DB approval | Only after staging approval | Local | No |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Only after hosted DB approval | Only after staging approval | Local | No |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Only after hosted DB approval | Only after staging approval | Local | No |
 
 **Never** prefix service role with `NEXT_PUBLIC_`.
 
@@ -167,7 +178,7 @@ AUTH0_CLIENT_SECRET=
 AUTH0_SECRET=
 APP_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<local-publishable-key>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<local-publishable-key>
 ```
 
 Use local Supabase CLI output for the publishable key and local database credentials. Never use a service-role key in user-facing application paths. Unit/build checks must work without hosted credentials; a live Auth0 login needs a configured Auth0 tenant.
@@ -307,7 +318,7 @@ E2E must use deterministic auth/database mocks by default and need no cloud cred
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase API URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Public anon key (RLS enforced) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Public publishable key (RLS enforced) |
 | `APP_BASE_URL` | Yes | Canonical app URL for Auth0 redirects |
 | `AUTH0_DOMAIN` | Yes | Auth0 tenant domain |
 | `AUTH0_CLIENT_ID` | Yes | Auth0 application ID |

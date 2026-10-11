@@ -375,7 +375,7 @@ Use only provider monitoring included in an approved free plan; do not send user
 | Variable | Scope | Description |
 |----------|-------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Client + Server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client + Server | Anon/public key (RLS enforced) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Client + Server | Publishable key (RLS enforced) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only (scripts) | Bypass RLS; never in user paths |
 | `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` | Server/configuration | Auth0 tenant and app configuration |
 | `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET` | Server only | Auth0 SDK/session secrets |

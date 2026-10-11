@@ -178,7 +178,7 @@ MVP uses layered rate limiting:
 | Secret | Storage | Never |
 |--------|---------|-------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Local env / approved host (public) | — |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Local env / approved host (publishable) | — |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Local env / approved host (publishable) | — |
 | `SUPABASE_SERVICE_ROLE_KEY` | Local admin/migration scripts only, if needed | Client, git, logs, user-triggered paths |
 | Auth0 client/session secrets | Deployment secret store | Browser, git, logs |
 | `.env.local` | Local dev only | Commit to git |
@@ -204,7 +204,7 @@ const envSchema = z.object({
   AUTH0_SECRET: z.string().min(1),
   APP_BASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 });
 ```
 
