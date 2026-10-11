@@ -126,12 +126,43 @@ Safe empty placeholders belong in `.env.example`; real values stay in ignored `.
 
 Live sign-in cannot be completed until the project owner configures these dashboards; no credentials should be sent in chat:
 
-1. In Auth0, create a **Regular Web Application** and enable the Google social connection for it. The Auth0 free plan's current quotas and terms are tracked in the [repository audit](./19_REPOSITORY_AUDIT.md); do not enable a paid plan or billing.
-2. Set the application's allowed callback URL to `http://localhost:3000/auth/callback`, allowed logout URL to `http://localhost:3000`, and allowed web origin to `http://localhost:3000`. Use the equivalent production URLs only after hosting has been approved.
-3. Add and enable the Post-Login Action shown above. It must set `role: "authenticated"` on the **ID token**.
-4. In the local `supabase/config.toml`, enable `[auth.third_party.auth0]` and set `tenant` to the Auth0 tenant name and `tenant_region` to the tenant's region using the format required by the installed Supabase CLI version. Do not put secrets in this file.
-5. Put the Auth0 domain, client ID, client secret, a fresh 32-byte hex `AUTH0_SECRET`, and local Supabase URL/publishable key in ignored `.env.local`. For example, generate the session secret locally with `openssl rand -hex 32`; do not reuse an example or share its output.
-6. Run `supabase start`, `supabase db reset`, and `supabase test db`. Then run `pnpm dev` and verify Google sign-in, sign-out, and `/dashboard` access.
+1. In Auth0, create or select a tenant. The free-plan limits and terms are summarized in the [repository audit](./19_REPOSITORY_AUDIT.md); do not select a paid plan or enable billing.
+2. Go to **Applications → Applications → Create Application**. Choose **Regular Web Applications**. In its settings, set:
+   - **Allowed Callback URLs:** `http://localhost:3000/auth/callback`
+   - **Allowed Logout URLs:** `http://localhost:3000`
+   - **Allowed Web Origins:** `http://localhost:3000`
+   - Keep the default **RS256** signing algorithm; Supabase does not support HS256 or PS256 for this integration.
+   Save changes. Use the matching production URLs only after hosting has been approved.
+3. In **Authentication → Social**, enable the Google connection and make it available to this application. For development, use Auth0's test/development provider keys if offered; otherwise configure Google's OAuth client in the connection settings. The application starts this connection using the `google-oauth2` connection name.
+4. Go to **Actions → Library → Create Action → Build from scratch**. Select the **Login / Post Login** trigger and add:
+
+   ```js
+   exports.onExecutePostLogin = async (event, api) => {
+     api.idToken.setCustomClaim("role", "authenticated");
+   };
+   ```
+
+   Deploy the Action, then attach it under **Actions → Flows → Login**. The `role` claim belongs on the ID token; do not set application roles in Auth0.
+5. In the repository's `supabase/config.toml`, change the Auth0 block to `enabled = true`, set `tenant` to the tenant identifier from the Auth0 domain (for example, for `example.us.auth0.com`, the tenant is `example`), and set `tenant_region` to the tenant region (`us`, `eu`, or `au`). These are identifiers, not secrets. Save the change before starting Supabase.
+6. In the Auth0 application settings, copy the **Domain**, **Client ID**, and **Client Secret**. In the repository root, create the ignored local env file and generate a session secret:
+
+   ```bash
+   cp -n .env.example .env.local
+   openssl rand -hex 32
+   ```
+
+   If `.env.local` already exists, do not overwrite it; add or update only the listed keys. Put the values in `.env.local` only. `AUTH0_DOMAIN` is the domain hostname without `https://`; `APP_BASE_URL` is `http://localhost:3000`. Never send or commit these values.
+7. Install/start the local Supabase stack using the [Deployment guide](./13_DEPLOYMENT.md). Run `supabase status` and copy its local **API URL** and **publishable/anon key** into `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. Local Studio is available at the Studio URL reported by the CLI.
+8. From the repository root, run:
+
+   ```bash
+   supabase start
+   supabase db reset
+   supabase test db
+   pnpm dev
+   ```
+
+   Visit `http://localhost:3000/login`, complete Google sign-in, confirm `/dashboard` loads, then sign out and confirm the protected route redirects back to sign-in.
 
 Auth0 tenant/client setup and Supabase's third-party-provider verification are external prerequisites, not a reason to enable billing. Until configured, `/login` shows a setup message and `/dashboard` redirects without exposing protected content.
 
