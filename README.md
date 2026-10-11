@@ -21,11 +21,11 @@ M0–M2 are complete. M3 is in progress: the application now uses the Auth0 SDK,
 
 **Auth0 setup is provisioned.** The Auth0 MCP created the Regular Web Application, saved credentials in ignored `.env.local`, and registered the local callback/logout URLs. The application display name is now RallyNook; the tenant domain is unchanged. The local Supabase Auth0 tenant config is enabled. The `RallyNook Supabase JWT Role Claim` Post-Login Action is created, built, deployed, and attached to the Login trigger (confirmed in the Auth0 Dashboard by the project owner). The app's Google sign-in route was verified to redirect to Google Accounts, and the Auth0 login page displays the Google option.
 
-**M3 is not complete yet.** Interactive Google sign-in and the issued ID token's `role: authenticated` claim still need verification. Local Supabase integration tests also remain: Docker is unavailable in the current environment and the Supabase CLI is not installed; configure the local API URL and publishable key, then run the actual pgTAP suite. M4 and production deployment remain blocked until the acceptance checks pass. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md), [authentication setup](./docs/07_AUTHENTICATION.md), and [repository audit](./docs/19_REPOSITORY_AUDIT.md).
+**M3 is not complete yet.** Interactive Google sign-in and the issued ID token's `role: authenticated` claim still need verification. The Supabase CLI is pinned as a project dev dependency, but local Supabase integration tests remain blocked: Docker is unavailable, and starting the stack through the installed Podman runtime failed. Once a compatible local container runtime is available, configure the local API URL and publishable key, then run the actual pgTAP suite. M4 and production deployment remain blocked until the acceptance checks pass. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md), [authentication setup](./docs/07_AUTHENTICATION.md), and [repository audit](./docs/19_REPOSITORY_AUDIT.md).
 
 ## Local development
 
-Requirements: Node.js 20+, pnpm 9+, Supabase CLI, and Docker only if running the local Supabase stack.
+Requirements: Node.js 20+ and pnpm 9+. The pinned Supabase CLI is available through `pnpm exec supabase`; a compatible Docker runtime is required only for the local Supabase stack.
 
 ```bash
 pnpm install
@@ -38,9 +38,9 @@ If `.env.local` already exists, do not overwrite it; add only missing keys. The 
 For local database, migration, and database-test work:
 
 ```bash
-supabase start
-supabase db reset
-supabase test db
+pnpm exec supabase start
+pnpm exec supabase db reset
+pnpm exec supabase test db
 ```
 
 The live Auth0 tenant and Supabase hosted project are not required for lint, typecheck, or build. No service should require billing or paid usage.

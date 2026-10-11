@@ -341,7 +341,7 @@ jobs:
 ### Local Development
 
 - Supabase seed script with test community, events, users
-- `supabase db reset` loads seed
+- `pnpm exec supabase db reset` loads seed
 
 ### E2E
 

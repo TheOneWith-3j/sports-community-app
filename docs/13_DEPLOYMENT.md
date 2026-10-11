@@ -12,7 +12,7 @@
 
 ## Overview
 
-Run and test the Next.js application locally without paid services. Auth0 is the intended identity provider and Supabase PostgreSQL is the database candidate; hosted deployment is not approved until terms, payment requirements, quotas, and product eligibility are verified. See [Repository Audit](./19_REPOSITORY_AUDIT.md). Never enable billing or paid resources without explicit authorization.
+Run and test the Next.js application locally without paid services. Auth0 is the identity provider; Supabase migrations/PostgreSQL remain the local development and test target, not an approved always-available hosted database. Supabase Free can pause after a week of inactivity. Neon Free and Netlify Free are only candidates for an experiment; neither is approved as an uptime-guaranteed production stack. See [Repository Audit](./19_REPOSITORY_AUDIT.md). Never enable billing or paid resources without explicit authorization.
 
 ---
 
@@ -35,8 +35,8 @@ flowchart LR
 
 | Environment | Purpose |
 |-------------|---------|
-| Hosted | Do not create until payment/card, pause, quota, backup, and recovery requirements are verified |
-| Local | `supabase start` for development |
+| Hosted | No project is approved yet; evaluate documented pause/cold-start behavior, quotas, payment/card requirements, backups, and recovery before provisioning |
+| Local | `pnpm exec supabase start` for development when a compatible container runtime is available |
 
 ### 2. Configure Auth0 integration
 
@@ -50,10 +50,10 @@ flowchart LR
 
 ```bash
 # Link local to remote project
-supabase link --project-ref <project-id>
+pnpm exec supabase link --project-ref <project-id>
 
 # Push migrations
-supabase db push
+pnpm exec supabase db push
 
 # Or apply via Dashboard SQL editor for first deploy
 ```
@@ -63,7 +63,7 @@ Migration files: `supabase/migrations/*.sql`
 ### 4. Seed Data
 
 ```bash
-supabase db seed
+pnpm exec supabase db seed
 ```
 
 Seeds `activity_types`: badminton, pickleball, general.
@@ -81,7 +81,7 @@ Create bucket `avatars`:
 
 ## Hosting evaluation
 
-Vercel Hobby is a candidate only for eligible personal, non-commercial use; its official fair-use restriction does not establish eligibility for this product. Do not select it for production until actual project use fits its terms. Evaluate an alternative host using the same free-tier, runtime, data persistence, and cost criteria in the audit. Do not enable usage-based billing.
+Vercel Hobby is a candidate only for eligible personal, non-commercial use; its official fair-use restriction does not establish eligibility for this product. Netlify Free (300 credits) and Neon Free (scale-to-zero) are shortlisted for a small-traffic experiment only, not approved production services; their free limits do not provide a verified uptime guarantee. Check current eligibility, payment requirements, credit exhaustion, cold-start behavior, and runtime compatibility in the [Repository Audit](./19_REPOSITORY_AUDIT.md) before provisioning. Do not enable usage-based billing.
 
 ### Vercel (conditional only)
 
@@ -129,8 +129,8 @@ Set in Vercel Dashboard for Production, Preview, and Development:
 
 - Node.js 20+
 - pnpm 9+
-- Supabase CLI
-- Docker (for local Supabase)
+- Supabase CLI (pinned in `package.json`; invoke with `pnpm exec supabase`)
+- Docker Desktop or another container runtime that works with the Supabase CLI (the Podman setup on the current development machine did not start successfully)
 
 ### Setup Steps (M0–M1)
 
@@ -145,14 +145,14 @@ pnpm install
 # Copy environment template
 cp .env.example .env.local
 
-# Start local Supabase (requires Docker)
-supabase start
+# Start local Supabase (requires a compatible container runtime)
+pnpm exec supabase start
 
 # Apply migrations and seed
-supabase db reset
+pnpm exec supabase db reset
 
 # Run database/RLS regression tests
-supabase test db
+pnpm exec supabase test db
 
 # Start Next.js (Auth0 credentials required only for live sign-in)
 pnpm dev

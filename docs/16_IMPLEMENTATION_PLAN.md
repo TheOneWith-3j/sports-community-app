@@ -158,7 +158,7 @@ src/lib/supabase/server.ts
 
 ### Acceptance Criteria
 
-- [ ] `supabase start` runs locally; hosted project is not required
+- [ ] `pnpm exec supabase start` runs locally; hosted project is not required
 - [ ] Env validation fails loudly if vars missing in production build
 - [ ] Server client creates without error in test Server Component
 - [ ] Database client initializes without using Supabase Auth
@@ -228,7 +228,7 @@ src/types/database.ts
 
 ### Acceptance Criteria
 
-- [ ] `supabase db reset` applies all migrations and seed without error
+- [ ] `pnpm exec supabase db reset` applies all migrations and seed without error
 - [ ] All tables exist with correct columns and indexes
 - [ ] RLS enabled on all tables
 - [ ] activity_types seeded with badminton, pickleball, general

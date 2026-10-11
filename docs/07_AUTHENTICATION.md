@@ -149,13 +149,13 @@ Auth0 MCP onboarding created the application and saved its credentials locally. 
    ```
 
    Store that output only as `AUTH0_SECRET` in another environment's ignored `.env.local`. Never send or commit the secret.
-7. Install/start the local Supabase stack using the [Deployment guide](./13_DEPLOYMENT.md). Run `supabase status` and copy its local **API URL** and **publishable/anon key** into `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. Local Studio is available at the Studio URL reported by the CLI.
+7. Install/start the local Supabase stack using the [Deployment guide](./13_DEPLOYMENT.md). Run `pnpm exec supabase status` and copy its local **API URL** and **publishable/anon key** into `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. Local Studio is available at the Studio URL reported by the CLI.
 8. From the repository root, run:
 
    ```bash
-   supabase start
-   supabase db reset
-   supabase test db
+   pnpm exec supabase start
+   pnpm exec supabase db reset
+   pnpm exec supabase test db
    pnpm dev
    ```
 
