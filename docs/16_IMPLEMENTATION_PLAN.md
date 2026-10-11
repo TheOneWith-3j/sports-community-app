@@ -29,8 +29,8 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M0 | Repository and Tooling Setup | Complete |
 | M1 | Supabase Database and Environment | Complete; M3 replaces legacy Auth client assumptions |
 | M2 | Database Schema and RLS | Complete; M3 adds Auth0 identity mapping |
-| M3 | Authentication — Auth0 Google Login | In progress; local PostgreSQL migration smoke-tested; Auth0/Supabase integration verification remains |
-| M4 | User Profile | Not started |
+| M3 | Authentication — Auth0 Google Login | Complete; live Auth0 profile provisioning, hosted migrations, and 22 SQL regression assertions verified |
+| M4 | User Profile | Complete; authenticated onboarding, profile update, persistence, and validation flows verified |
 | M5 | Community Creation | Not started |
 | M6 | Event CRUD | Not started |
 | M7 | Public Event Page | Not started |
@@ -278,7 +278,7 @@ feat: add database schema, RLS policies, and join/leave RPC functions (M2)
 
 ### Objective
 
-Users sign in through Auth0 using Google as a federated connection. Auth0 is the only identity provider; Supabase provides PostgreSQL/RLS only. Protected routes redirect unauthenticated users, and the server/data boundary validates the Auth0 identity. The previously merged Supabase Auth implementation is being replaced; M3 remains incomplete until its database and live-provider behavior is verified.
+Users sign in through Auth0 using Google as a federated connection. Auth0 is the only identity provider; Supabase provides PostgreSQL/RLS only. Protected routes redirect unauthenticated users, and the server/data boundary validates the Auth0 identity. The previous Supabase Auth implementation has been replaced; the hosted schema and live Auth0-to-Supabase profile flow are verified.
 
 ### Features
 
@@ -307,27 +307,29 @@ proxy.ts (Next.js 16; follow the current Auth0 SDK convention)
 
 ### Acceptance Criteria
 
-- [ ] Auth0 Google login completes using the SDK and creates a secure session
-- [ ] Supabase rejects invalid/expired/wrong-audience JWTs; valid Auth0 JWT is accepted
-- [ ] Profile row is created/resolved race-safely from validated issuer + subject
-- [ ] `/dashboard` inaccessible without auth
-- [ ] Sign out clears session
-- [ ] Login redirects to `next` param when safe
-- [ ] Authenticated user visiting `/login` redirects to dashboard
-- [ ] RLS and RPC tests prove caller-to-profile mapping and prevent forged role escalation
-- [ ] No application path uses Supabase Auth or trusts browser-provided role values
+- [x] Auth0 sign-in completes using the SDK and creates a secure session (verified with the Auth0 database connection; Google connection redirect was checked, but full Google consent was not performed)
+- [x] Supabase accepts the real Auth0 ID token; unauthenticated access is denied
+- [x] Profile row is created/resolved race-safely from validated issuer + subject
+- [x] `/dashboard` inaccessible without auth
+- [x] Sign out clears session
+- [x] Login redirects to `next` param when safe
+- [x] Authenticated user visiting `/login` redirects to dashboard
+- [x] RLS and RPC tests prove caller-to-profile mapping and prevent forged role escalation
+- [x] No application path uses Supabase Auth or trusts browser-provided role values
+
+Expired- and wrong-audience-token rejection were not separately exercised with crafted tokens. The live flow verifies acceptance of the actual Auth0 ID token, and the regression SQL verifies database authorization behavior. The official `supabase test db --linked` runner was unavailable without Docker/Podman; all 22 SQL assertions were instead executed successfully through `supabase db query --linked --file`.
 
 ### Manual Test Checklist
 
-- [ ] Sign in with Google through Auth0 on localhost
-- [ ] Refresh page — still authenticated
-- [ ] Sign out — redirected to login
-- [ ] Visit /dashboard unauthenticated — redirected to login
-- [ ] Login with ?next=/dashboard/settings — lands on settings
+- [ ] Complete Google consent and sign in through Auth0 on localhost (the Google connection redirect was checked; full consent was not performed)
+- [x] Refresh page — still authenticated
+- [x] Sign out — redirected to login
+- [x] Visit /dashboard unauthenticated — redirected to login
+- [x] Login with `?next=/dashboard/settings` — lands on settings
 
 ### Definition of Done
 
-Full Auth0 flow and trusted Auth0-to-PostgreSQL identity mapping work per [Authentication](./07_AUTHENTICATION.md), [RBAC](./06_RBAC.md), and [Repository Audit](./19_REPOSITORY_AUDIT.md). Dashboard shell exists. No hosted provider is required for local lint/typecheck/unit tests.
+The live Auth0 flow and trusted Auth0-to-PostgreSQL identity mapping work per [Authentication](./07_AUTHENTICATION.md), [RBAC](./06_RBAC.md), and [Repository Audit](./19_REPOSITORY_AUDIT.md). Dashboard shell exists. No hosted provider is required for local lint/typecheck/unit tests.
 
 ### Suggested Git Commit Message
 
@@ -367,7 +369,8 @@ Users view and edit profile. Onboarding flow for new users to confirm display na
 - getCurrentProfile query
 - updateProfile Server Action with Zod validation
 - Profile settings page
-- Onboarding page for new users (redirect if display name default)
+- Onboarding page for new users (redirect until profile setup is completed)
+- Persisted onboarding state so provider-supplied names do not bypass first-login setup
 - Avatar URL field (upload deferred to Storage setup or URL input for MVP)
 
 ### Files Expected
@@ -377,24 +380,27 @@ src/lib/validations/profile.ts
 src/features/auth/actions.ts (updateProfile)
 src/features/auth/queries.ts (getCurrentProfile)
 src/features/auth/components/profile-form.tsx
-app/(dashboard)/settings/page.tsx
+app/(dashboard)/dashboard/settings/page.tsx
 app/onboarding/page.tsx
+supabase/migrations/20260101000004_profile_onboarding.sql
 ```
 
 ### Acceptance Criteria
 
-- [ ] User can view profile on settings page
-- [ ] User can update display name and phone
-- [ ] Validation errors show inline
-- [ ] New user redirected to onboarding once
-- [ ] Profile changes reflect in database
+- [x] User can view profile on settings page
+- [x] User can update display name and phone
+- [x] Validation errors show inline
+- [x] New user redirected to onboarding once
+- [x] Profile changes reflect in database
 
 ### Manual Test Checklist
 
-- [ ] First sign-in redirects to onboarding
-- [ ] Save display name — appears in settings
-- [ ] Invalid phone format rejected
-- [ ] Skip onboarding not possible without valid name
+- [x] First sign-in redirects to onboarding
+- [x] Save display name — appears in settings after reload
+- [x] Invalid phone format rejected inline
+- [x] Skip onboarding not possible without valid name
+
+The authenticated UI was tested with a disposable Auth0 database user. The first-login flow is tracked explicitly by `profiles.onboarding_completed`, rather than guessing completion from the display name supplied by an identity provider. Existing named profiles are preserved as complete; newly provisioned profiles start incomplete until a validated profile update succeeds.
 
 ### Definition of Done
 

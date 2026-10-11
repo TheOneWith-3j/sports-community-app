@@ -1,27 +1,28 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import Link from "next/link";
 
-import { ensureCurrentProfile } from "@/features/auth/queries";
+import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
+import {
+  getCurrentProfile,
+} from "@/features/auth/queries";
 
-export default function DashboardLayout({
+export const instant = false;
+
+export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <Suspense fallback={<main className="min-h-screen bg-background" />}>
-      <AuthenticatedDashboard>{children}</AuthenticatedDashboard>
-    </Suspense>
-  );
-}
+  const result = await getCurrentProfile();
 
-async function AuthenticatedDashboard({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  await connection();
-  const profileId = await ensureCurrentProfile();
-
-  if (!profileId) {
+  if (!result) {
     redirect("/auth/login?returnTo=%2Fdashboard");
+  }
+
+  if ("error" in result) {
+    return <ProfileResolutionError error={result.error} />;
+  }
+
+  if (!result.profile.onboarding_completed) {
+    redirect("/onboarding");
   }
 
   return (
@@ -32,6 +33,12 @@ async function AuthenticatedDashboard({
             <p className="text-overline uppercase text-muted-foreground">Dashboard</p>
             <h1 className="text-heading-md text-foreground">Community hub</h1>
           </div>
+          <Link
+            href="/dashboard/settings"
+            className="rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground transition-colors hover:bg-muted/80"
+          >
+            Profile settings
+          </Link>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>

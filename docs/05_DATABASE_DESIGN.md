@@ -59,6 +59,7 @@ erDiagram
     text display_name
     text avatar_url
     text phone
+    boolean onboarding_completed
     platform_role platform_role
     timestamptz created_at
     timestamptz updated_at
@@ -178,6 +179,7 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'no_show');
 | `display_name` | TEXT | NOT NULL | User-visible name |
 | `avatar_url` | TEXT | NULL | Profile image URL |
 | `phone` | TEXT | NULL | Optional phone |
+| `onboarding_completed` | BOOLEAN | NOT NULL DEFAULT false | Whether first-login profile setup is complete |
 | `platform_role` | platform_role | NOT NULL DEFAULT 'member' | Platform-level role |
 | `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | Created timestamp |
 | `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | Updated timestamp |

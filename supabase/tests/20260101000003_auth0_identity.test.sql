@@ -3,7 +3,7 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path TO extensions, public;
 
-SELECT plan(21);
+SELECT plan(22);
 
 SET LOCAL ROLE anon;
 SELECT set_config('request.jwt.claims', '{}', true);
@@ -78,6 +78,15 @@ SELECT is(
   ),
   'Test Player',
   'profile name comes from the verified ID token'
+);
+SELECT is(
+  (
+    SELECT p.onboarding_completed
+    FROM public.profiles AS p
+    WHERE p.id = public.current_profile_id()
+  ),
+  FALSE,
+  'new Auth0 profiles require onboarding even when the token includes a name'
 );
 SELECT is(
   (

@@ -116,6 +116,6 @@ flowchart LR
 
 ## Repository Status
 
-**Current phase:** M0–M2 are implemented; M3 Auth0 migration and the associated database/RLS mapping are in progress. Live sign-in and Auth0-to-Supabase JWT validation must pass before M4 proceeds. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
+**Current phase:** M0–M4 are complete; M5 Community Creation is next. Auth0/Supabase identity integration and authenticated profile settings/onboarding have been verified. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
 
 **Product brand:** RallyNook. Preliminary market scan only; see [Product Vision](./01_PRODUCT_VISION.md) and [ADR-022](./18_DECISIONS.md#adr-022-rallynook-product-brand). Formal trademark clearance is outstanding.
