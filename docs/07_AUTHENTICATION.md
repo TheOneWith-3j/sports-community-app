@@ -165,7 +165,9 @@ The Auth0 tenant/client now exist; enabling Google and attaching the Post-Login 
 
 ### Auth0 tenant name and Management API scopes
 
-The Auth0 **application display name** is RallyNook. The tenant's technical name/domain (`dev-viqq4bj1e522n2ob.us.auth0.com`) is a separate identifier and is unchanged. Auth0 does not provide an in-place rename for that tenant identifier; using a different tenant slug means creating a new tenant and migrating its applications, connections, Actions, and settings. Do not recreate this tenant just to change the product label.
+The Auth0 **application display name** is RallyNook. The tenant's technical name/domain (`dev-viqq4bj1e522n2ob.us.auth0.com`) is a separate identifier and is unchanged. The tenant URL slug itself cannot be renamed in place; using a different slug means creating a new tenant and migrating its applications, connections, Actions, and settings. Do not recreate this tenant just to change the product label.
+
+Auth0 separately supports an editable tenant **friendly name**. To set it to `RallyNook`, use the tenant settings in the Dashboard or the [Management API tenant-settings endpoint](https://auth0.com/docs/api/management/v2/tenants/patch-settings) with the `update:tenant_settings` scope and body `{"friendly_name":"RallyNook"}`. This changes the friendly label, not the tenant URL. It has not been changed by the Auth0 application rename.
 
 An Auth0 custom domain can present a branded login URL, but it masks rather than renames the underlying tenant domain. Auth0's [custom-domain documentation](https://auth0.com/docs/customize/custom-domains) says a free custom domain requires a valid payment card on file for verification, though Auth0 says it will not charge the card. It is optional and is not configured for this project.
 
