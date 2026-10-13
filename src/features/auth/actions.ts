@@ -1,50 +1,92 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-import { env } from "@/lib/env";
+import { getCurrentProfile, type UserProfile } from "@/features/auth/queries";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { googleAuthSchema } from "@/lib/validations/auth";
+import { updateProfileSchema } from "@/lib/validations/profile";
+import type { ActionResult } from "@/types/actions";
 
-function buildRedirectUrl(pathname: string): string {
-  const safePath = pathname.startsWith("/") && !pathname.startsWith("//") ? pathname : "/dashboard";
-  return new URL(safePath, env.NEXT_PUBLIC_APP_URL).toString();
-}
+export async function updateProfile(
+  input: unknown,
+): Promise<ActionResult<UserProfile>> {
+  const parsed = updateProfileSchema.safeParse(input);
 
-export async function signInWithGoogle(formData: FormData): Promise<void> {
-  const redirectParam = formData.get("redirectTo") ?? "/dashboard";
-  const result = googleAuthSchema.safeParse({ redirectTo: String(redirectParam) });
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string[]> = {};
 
-  if (!result.success) {
-    redirect("/login?error=invalid_redirect");
-    return;
+    for (const issue of parsed.error.issues) {
+      const field = issue.path[0];
+      if (typeof field === "string") {
+        fieldErrors[field] ??= [];
+        fieldErrors[field].push(issue.message);
+      }
+    }
+
+    return {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Review the highlighted fields and try again.",
+        fieldErrors,
+      },
+    };
   }
 
-  const safeRedirect = result.data.redirectTo;
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: buildRedirectUrl(safeRedirect),
-    },
-  });
-
-  if (error || !data.url) {
-    redirect("/login?error=oauth_start_failed");
-    return;
+  const current = await getCurrentProfile();
+  if (!current) {
+    return {
+      success: false,
+      error: { code: "UNAUTHORIZED", message: "Sign in to update your profile." },
+    };
   }
 
-  redirect(data.url);
-}
+  if ("error" in current) {
+    return {
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Your profile could not be loaded. Please try again.",
+      },
+    };
+  }
 
-export async function signOut(): Promise<void> {
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signOut();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      display_name: parsed.data.displayName,
+      phone: parsed.data.phone,
+      avatar_url: parsed.data.avatarUrl,
+      onboarding_completed: true,
+    })
+    .eq("id", current.profile.id)
+    .select(
+      "id, display_name, avatar_url, phone, onboarding_completed, created_at, updated_at",
+    )
+    .single();
 
   if (error) {
-    redirect("/login?error=signout_failed");
-    return;
+    console.error("Supabase profile update failed.", {
+      code: error.code,
+      message: error.message,
+    });
+
+    return {
+      success: false,
+      error: {
+        code: error.code === "42501" ? "FORBIDDEN" : "INTERNAL_ERROR",
+        message:
+          error.code === "42501"
+            ? "You are not allowed to update this profile."
+            : "Your profile could not be saved. Please try again.",
+      },
+    };
   }
 
-  redirect("/login");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/onboarding");
+
+  return { success: true, data };
 }

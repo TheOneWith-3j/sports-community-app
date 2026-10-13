@@ -14,6 +14,7 @@
 - [Testing](./12_TESTING.md)
 - [Deployment](./13_DEPLOYMENT.md)
 - [AI Development Guide](./15_AI_DEVELOPMENT_GUIDE.md)
+- [Repository and Free-Tier Audit](./19_REPOSITORY_AUDIT.md)
 
 ---
 
@@ -25,11 +26,11 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 
 | Milestone | Name | Status |
 |-----------|------|--------|
-| M0 | Repository and Tooling Setup | Not started |
-| M1 | Supabase Project and Environment | Not started |
-| M2 | Database Schema and RLS | Not started |
-| M3 | Authentication — Google Login | Not started |
-| M4 | User Profile | Not started |
+| M0 | Repository and Tooling Setup | Complete |
+| M1 | Supabase Database and Environment | Complete; M3 replaces legacy Auth client assumptions |
+| M2 | Database Schema and RLS | Complete; M3 adds Auth0 identity mapping |
+| M3 | Authentication — Auth0 Google Login | Complete; live Auth0 profile provisioning, hosted migrations, and 22 SQL regression assertions verified |
+| M4 | User Profile | Complete; authenticated onboarding, profile update, persistence, and validation flows verified |
 | M5 | Community Creation | Not started |
 | M6 | Event CRUD | Not started |
 | M7 | Public Event Page | Not started |
@@ -77,9 +78,9 @@ postcss.config.mjs
 .prettierrc
 .gitignore
 .env.example
-src/app/layout.tsx
-src/app/page.tsx
-src/app/globals.css
+app/layout.tsx
+app/page.tsx
+app/globals.css
 src/lib/utils.ts
 components.json (shadcn)
 src/components/ui/button.tsx
@@ -131,39 +132,36 @@ chore: initialize Next.js project with tooling and folder structure (M0)
 
 ---
 
-## M1: Supabase Project and Environment
+## M1: Supabase Database and Environment
 
 ### Objective
 
-Connect local development to Supabase (local CLI or cloud project). Environment validation and Supabase client utilities in place.
+Connect local development to Supabase PostgreSQL (prefer local CLI) and establish database environment validation. Supabase Auth is not the identity provider; the current M1 auth/session helpers are legacy and must be replaced during M3.
 
 ### Features
 
 - Supabase CLI initialized (`supabase init`)
-- Local Supabase or cloud project linked
+- Local Supabase project; hosted project only after the free-tier audit approves it
 - Environment variables in `.env.local`
-- Supabase browser, server, and middleware clients
+- Server-side Supabase database client; only add browser access where a documented use case requires it
 - Env validation with Zod (`src/lib/env.ts`)
-- Placeholder middleware for session refresh
+- No Supabase Auth session refresh; Auth0 owns application sessions
 
 ### Files Expected
 
 ```
 supabase/config.toml
 src/lib/env.ts
-src/lib/supabase/client.ts
 src/lib/supabase/server.ts
-src/lib/supabase/middleware.ts
-middleware.ts
 .env.example (updated with real key placeholders)
 ```
 
 ### Acceptance Criteria
 
-- [ ] `supabase start` runs (or cloud project connected)
+- [ ] `pnpm exec supabase start` runs locally; hosted project is not required
 - [ ] Env validation fails loudly if vars missing in production build
 - [ ] Server client creates without error in test Server Component
-- [ ] Middleware runs on matched routes without error
+- [ ] Database client initializes without using Supabase Auth
 - [ ] `.env.local` gitignored
 
 ### Manual Test Checklist
@@ -214,7 +212,7 @@ Deploy full PostgreSQL schema, enums, helper functions, join/leave RPC stubs, RL
 - Helper functions: is_super_admin, is_community_admin, is_community_member
 - RPC: join_event, leave_event, promote_waitlisted, remove_participant
 - RLS policies from [RBAC](./06_RBAC.md)
-- Triggers: updated_at, handle_new_user on auth.users
+- Triggers: updated_at; legacy `handle_new_user` is Supabase Auth-specific and must be removed/replaced during M3
 - Seed activity_types
 - Generate TypeScript types
 
@@ -230,7 +228,7 @@ src/types/database.ts
 
 ### Acceptance Criteria
 
-- [ ] `supabase db reset` applies all migrations and seed without error
+- [ ] `pnpm exec supabase db reset` applies all migrations and seed without error
 - [ ] All tables exist with correct columns and indexes
 - [ ] RLS enabled on all tables
 - [ ] activity_types seeded with badminton, pickleball, general
@@ -276,58 +274,67 @@ feat: add database schema, RLS policies, and join/leave RPC functions (M2)
 
 ---
 
-## M3: Authentication — Google Login
+## M3: Authentication — Auth0 Google Login
 
 ### Objective
 
-Users can sign in and sign out with Google. Protected routes redirect unauthenticated users. Session persists.
+Users sign in through Auth0 using Google as a federated connection. Auth0 is the only identity provider; Supabase provides PostgreSQL/RLS only. Protected routes redirect unauthenticated users, and the server/data boundary validates the Auth0 identity. The previous Supabase Auth implementation has been replaced; the hosted schema and live Auth0-to-Supabase profile flow are verified.
 
 ### Features
 
-- Login page with "Continue with Google"
-- OAuth callback route
-- signInWithGoogle and signOut Server Actions
-- Middleware protects `/dashboard/**`
+- Auth0 official Next.js SDK using its current App Router/OIDC Authorization Code + PKCE pattern
+- Login page with "Continue with Google" initiating the Auth0-hosted flow
+- Auth0 SDK callback/logout routes and secure SDK-managed session
+- Middleware/proxy protects `/dashboard/**` as defense in depth
 - Redirect authenticated users from `/login`
 - Return URL (`next` param) support
+- Supabase Auth0 third-party JWT integration, including the required Auth0 Action claim
+- Internal UUID profile mapping keyed by validated Auth0 issuer + subject
+- Replace every Supabase Auth `auth.users`/`auth.uid()` dependency in schema, RLS, triggers, and RPCs
+- Keep platform/community RBAC in PostgreSQL and enforce it with RLS; Auth0 tokens do not grant product roles
+- pgTAP regression tests for claim-to-profile mapping, idempotent provisioning, and role/identity update restrictions
 
 ### Files Expected
 
 ```
-src/app/(auth)/login/page.tsx
-src/app/(auth)/auth/callback/route.ts
-src/features/auth/actions.ts
-src/features/auth/queries.ts (getCurrentUser)
-src/app/(dashboard)/layout.tsx
-src/app/(dashboard)/page.tsx (placeholder dashboard)
-middleware.ts (updated matchers)
+app/(auth)/login/page.tsx
+Auth0 SDK route/session configuration and callback
+src/features/auth/queries.ts
+app/(dashboard)/layout.tsx
+app/(dashboard)/dashboard/page.tsx (placeholder dashboard route)
+proxy.ts (Next.js 16; follow the current Auth0 SDK convention)
 ```
 
 ### Acceptance Criteria
 
-- [ ] Google sign-in completes and creates session
-- [ ] Profile row exists after first sign-in (trigger)
-- [ ] `/dashboard` inaccessible without auth
-- [ ] Sign out clears session
-- [ ] Login redirects to `next` param when safe
-- [ ] Authenticated user visiting `/login` redirects to dashboard
+- [x] Auth0 sign-in completes using the SDK and creates a secure session (verified with the Auth0 database connection; Google connection redirect was checked, but full Google consent was not performed)
+- [x] Supabase accepts the real Auth0 ID token; unauthenticated access is denied
+- [x] Profile row is created/resolved race-safely from validated issuer + subject
+- [x] `/dashboard` inaccessible without auth
+- [x] Sign out clears session
+- [x] Login redirects to `next` param when safe
+- [x] Authenticated user visiting `/login` redirects to dashboard
+- [x] RLS and RPC tests prove caller-to-profile mapping and prevent forged role escalation
+- [x] No application path uses Supabase Auth or trusts browser-provided role values
+
+Expired- and wrong-audience-token rejection were not separately exercised with crafted tokens. The live flow verifies acceptance of the actual Auth0 ID token, and the regression SQL verifies database authorization behavior. The official `supabase test db --linked` runner was unavailable without Docker/Podman; all 22 SQL assertions were instead executed successfully through `supabase db query --linked --file`.
 
 ### Manual Test Checklist
 
-- [ ] Sign in with Google on localhost
-- [ ] Refresh page — still authenticated
-- [ ] Sign out — redirected to login
-- [ ] Visit /dashboard unauthenticated — redirected to login
-- [ ] Login with ?next=/dashboard/settings — lands on settings
+- [ ] Complete Google consent and sign in through Auth0 on localhost (the Google connection redirect was checked; full consent was not performed)
+- [x] Refresh page — still authenticated
+- [x] Sign out — redirected to login
+- [x] Visit /dashboard unauthenticated — redirected to login
+- [x] Login with `?next=/dashboard/settings` — lands on settings
 
 ### Definition of Done
 
-Full auth flow works per [Authentication](./07_AUTHENTICATION.md). Dashboard shell exists.
+The live Auth0 flow and trusted Auth0-to-PostgreSQL identity mapping work per [Authentication](./07_AUTHENTICATION.md), [RBAC](./06_RBAC.md), and [Repository Audit](./19_REPOSITORY_AUDIT.md). Dashboard shell exists. No hosted provider is required for local lint/typecheck/unit tests.
 
 ### Suggested Git Commit Message
 
 ```
-feat: implement Google OAuth sign-in and protected routes (M3)
+feat: implement Auth0 sign-in and protected routes (M3)
 ```
 
 ### Estimated Difficulty
@@ -340,13 +347,14 @@ feat: implement Google OAuth sign-in and protected routes (M3)
 
 ### Potential Risks
 
-- Google OAuth redirect URI mismatch — double-check Supabase and Google Console URLs
-- Cookie not set on callback — verify `@supabase/ssr` cookie handling
+- Auth0 callback URL mismatch — verify local/production callback and logout URLs
+- Supabase third-party JWT claim configuration mismatch — validate the exact ID-token claim and issuer/audience contract
+- Auth0 `sub` is not the internal UUID profile ID — use the reviewed issuer/subject mapping
 
 ### Future Improvements
 
-- Phone OTP (post-MVP)
-- Account linking
+- Additional login methods only after product need and free-tier evaluation
+- Account linking only after a separate identity/security review
 
 ---
 
@@ -361,7 +369,8 @@ Users view and edit profile. Onboarding flow for new users to confirm display na
 - getCurrentProfile query
 - updateProfile Server Action with Zod validation
 - Profile settings page
-- Onboarding page for new users (redirect if display name default)
+- Onboarding page for new users (redirect until profile setup is completed)
+- Persisted onboarding state so provider-supplied names do not bypass first-login setup
 - Avatar URL field (upload deferred to Storage setup or URL input for MVP)
 
 ### Files Expected
@@ -371,24 +380,27 @@ src/lib/validations/profile.ts
 src/features/auth/actions.ts (updateProfile)
 src/features/auth/queries.ts (getCurrentProfile)
 src/features/auth/components/profile-form.tsx
-src/app/(dashboard)/settings/page.tsx
-src/app/onboarding/page.tsx
+app/(dashboard)/dashboard/settings/page.tsx
+app/onboarding/page.tsx
+supabase/migrations/20260101000004_profile_onboarding.sql
 ```
 
 ### Acceptance Criteria
 
-- [ ] User can view profile on settings page
-- [ ] User can update display name and phone
-- [ ] Validation errors show inline
-- [ ] New user redirected to onboarding once
-- [ ] Profile changes reflect in database
+- [x] User can view profile on settings page
+- [x] User can update display name and phone
+- [x] Validation errors show inline
+- [x] New user redirected to onboarding once
+- [x] Profile changes reflect in database
 
 ### Manual Test Checklist
 
-- [ ] First sign-in redirects to onboarding
-- [ ] Save display name — appears in settings
-- [ ] Invalid phone format rejected
-- [ ] Skip onboarding not possible without valid name
+- [x] First sign-in redirects to onboarding
+- [x] Save display name — appears in settings after reload
+- [x] Invalid phone format rejected inline
+- [x] Skip onboarding not possible without valid name
+
+The authenticated UI was tested with a disposable Auth0 database user. The first-login flow is tracked explicitly by `profiles.onboarding_completed`, rather than guessing completion from the display name supplied by an identity provider. Existing named profiles are preserved as complete; newly provisioned profiles start incomplete until a validated profile update succeeds.
 
 ### Definition of Done
 
@@ -442,8 +454,8 @@ src/lib/validations/community.ts
 src/features/communities/actions.ts
 src/features/communities/queries.ts
 src/features/communities/components/community-form.tsx
-src/app/(dashboard)/community/page.tsx
-src/app/(dashboard)/community/setup/page.tsx
+app/(dashboard)/community/page.tsx
+app/(dashboard)/community/setup/page.tsx
 ```
 
 ### Acceptance Criteria
@@ -516,9 +528,9 @@ src/features/events/actions.ts
 src/features/events/queries.ts
 src/features/events/components/event-form.tsx
 src/components/domain/event-card.tsx
-src/app/(dashboard)/events/page.tsx
-src/app/(dashboard)/events/new/page.tsx
-src/app/(dashboard)/events/[id]/page.tsx
+app/(dashboard)/events/page.tsx
+app/(dashboard)/events/new/page.tsx
+app/(dashboard)/events/[id]/page.tsx
 ```
 
 ### Acceptance Criteria
@@ -590,8 +602,8 @@ Mobile-first public event page accessible via share link without authentication.
 ### Files Expected
 
 ```
-src/app/(public)/e/[slug]/page.tsx
-src/app/(public)/layout.tsx
+app/(public)/e/[slug]/page.tsx
+app/(public)/layout.tsx
 src/features/events/queries.ts (getEventBySlug, getEventWithCounts)
 src/features/events/components/event-header.tsx
 src/features/events/components/capacity-bar.tsx
@@ -663,7 +675,7 @@ Authenticated community members join published events. FCFS confirmed status unt
 src/features/participants/actions.ts (joinEvent)
 src/features/participants/queries.ts (getUserParticipation)
 src/features/participants/components/join-event-button.tsx
-src/app/(public)/e/[slug]/page.tsx (updated)
+app/(public)/e/[slug]/page.tsx (updated)
 src/lib/validations/participant.ts
 ```
 
@@ -704,7 +716,7 @@ feat: implement FCFS event join via atomic RPC (M8)
 
 ### Potential Risks
 
-- RPC auth context — ensure auth.uid() available in SECURITY DEFINER function
+- RPC auth context — ensure the trusted `current_profile_id()` mapping works safely in SECURITY DEFINER functions
 - Community membership auto-add policy — document in migration
 
 ### Future Improvements
@@ -732,8 +744,8 @@ When event full, new joiners automatically waitlisted with visible position.
 ```
 src/components/domain/waitlist-card.tsx
 src/features/participants/queries.ts (getWaitlistedParticipants)
-src/app/(public)/e/[slug]/page.tsx (waitlist status)
-src/app/(dashboard)/events/[id]/page.tsx (waitlist tab)
+app/(public)/e/[slug]/page.tsx (waitlist status)
+app/(dashboard)/events/[id]/page.tsx (waitlist tab)
 ```
 
 ### Acceptance Criteria
@@ -800,7 +812,7 @@ Users leave events. Confirmed user leaving promotes first waitlisted user automa
 src/features/participants/actions.ts (leaveEvent)
 src/features/participants/components/leave-event-button.tsx
 src/components/domain/confirmation-dialog.tsx
-src/app/(public)/e/[slug]/page.tsx (leave button when joined)
+app/(public)/e/[slug]/page.tsx (leave button when joined)
 ```
 
 ### Acceptance Criteria
@@ -870,8 +882,8 @@ Ordered participant list on event pages. Admin can remove participants.
 src/components/domain/participant-list.tsx
 src/features/participants/actions.ts (removeParticipant)
 src/features/participants/queries.ts (getConfirmedParticipants)
-src/app/(public)/e/[slug]/page.tsx (participant list)
-src/app/(dashboard)/events/[id]/page.tsx (admin participant management)
+app/(public)/e/[slug]/page.tsx (participant list)
+app/(dashboard)/events/[id]/page.tsx (admin participant management)
 ```
 
 ### Acceptance Criteria
@@ -941,7 +953,7 @@ src/lib/validations/attendance.ts
 src/features/attendance/actions.ts
 src/features/attendance/queries.ts
 src/components/domain/attendance-card.tsx
-src/app/(dashboard)/events/[id]/attendance/page.tsx
+app/(dashboard)/events/[id]/attendance/page.tsx
 ```
 
 ### Acceptance Criteria
@@ -1005,12 +1017,12 @@ Polished admin dashboard with upcoming events, quick actions, and navigation she
 ### Files Expected
 
 ```
-src/app/(dashboard)/page.tsx (dashboard home)
+app/(dashboard)/dashboard/page.tsx (dashboard home)
 src/components/layout/sidebar.tsx
 src/components/layout/bottom-nav.tsx
 src/components/domain/statistics-card.tsx
 src/components/domain/empty-state.tsx
-src/app/(dashboard)/layout.tsx (updated with nav)
+app/(dashboard)/layout.tsx (updated with nav)
 ```
 
 ### Acceptance Criteria
@@ -1146,7 +1158,7 @@ Premium UI polish: dark mode default, light toggle, motion, loading/empty/error 
 ### Files Expected
 
 ```
-src/app/globals.css (full tokens)
+app/globals.css (full tokens)
 src/components/theme-provider.tsx
 src/components/theme-toggle.tsx
 src/components/domain/loading-state.tsx
@@ -1278,15 +1290,15 @@ test: add Vitest unit tests and Playwright E2E for core flows (M16)
 
 ### Objective
 
-Production deployment on Vercel with Supabase production project and CI pipeline.
+Production deployment to an eligible host and database configuration only after official free-tier, terms, payment, and recovery verification; CI pipeline included. Vercel Hobby is conditional and not presumed eligible.
 
 ### Features
 
-- Vercel project connected to GitHub
-- Production Supabase project with migrations applied
+- Approved eligible host connected to GitHub (no paid plan or usage-based billing)
+- Hosted PostgreSQL only after free-tier and recovery review; migrations applied
 - Environment variables configured
-- GitHub Actions CI: lint, typecheck, test
-- Google OAuth production URLs
+- GitHub Actions CI: lint, typecheck, tests, build, dependency and secret checks
+- Auth0 Google connection with production callback/logout URLs
 - Custom domain (optional)
 - Storage bucket for avatars (if not done in M4)
 
@@ -1296,16 +1308,15 @@ Production deployment on Vercel with Supabase production project and CI pipeline
 .github/workflows/ci.yml
 .env.example (final)
 README.md (deploy section updated in M18)
-vercel.json (if needed)
 ```
 
 ### Acceptance Criteria
 
 - [ ] Production URL loads application
-- [ ] Google auth works on production domain
+- [ ] Auth0 sign-in works on production domain
 - [ ] Database migrations applied to production
 - [ ] CI passes on push to main
-- [ ] Preview deploys work on PR
+- [ ] Preview deploys work within the verified free allowance, if supported
 - [ ] No secrets in client bundle
 
 ### Manual Test Checklist
@@ -1336,7 +1347,8 @@ chore: add CI pipeline and configure production deployment (M17)
 
 ### Potential Risks
 
-- OAuth redirect mismatch on production domain
+- Auth0 callback/logout mismatch on production domain
+- Host eligibility or quota does not fit production use; pause rather than upgrade or incur cost
 - Migration drift between local and prod — always push migrations first
 
 ### Future Improvements

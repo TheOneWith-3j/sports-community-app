@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This document records every major technical and product decision for the Sports Community Platform. All future implementation must align with these records. When revisiting a decision, add a new ADR with a superseding status rather than editing history.
+This document records every major technical and product decision for RallyNook. All future implementation must align with these records. When revisiting a decision, add a new ADR with a superseding status rather than editing history.
 
 ## Related Documents
 
@@ -12,12 +12,13 @@ This document records every major technical and product decision for the Sports 
 - [Authentication](./07_AUTHENTICATION.md)
 - [Security](./08_SECURITY.md)
 - [Implementation Plan](./16_IMPLEMENTATION_PLAN.md)
+- [Repository Audit](./19_REPOSITORY_AUDIT.md)
 
 ---
 
 ## ADR-001: Modular Monolith Architecture
 
-**Status:** Accepted
+**Status:** Accepted (hosting and identity details superseded in part by ADR-021)
 
 **Context:** A solo developer will build the MVP with AI assistance. The product scope is event participation management for sports communities — not a distributed system requiring independent scaling of services.
 
@@ -43,7 +44,7 @@ This document records every major technical and product decision for the Sports 
 
 ## ADR-002: Supabase as Backend Platform
 
-**Status:** Accepted
+**Status:** Superseded in part by ADR-021 (Supabase remains the PostgreSQL/RLS candidate; Supabase Auth is not used)
 
 **Context:** Need PostgreSQL, authentication, and row-level security with minimal DevOps. Free tier required for MVP.
 
@@ -147,7 +148,7 @@ This document records every major technical and product decision for the Sports 
 
 ## ADR-006: Google OAuth Only for MVP Authentication
 
-**Status:** Accepted
+**Status:** Superseded by ADR-021
 
 **Context:** Target users share event links on WhatsApp. Google login is familiar, free, and quick to implement via Supabase Auth.
 
@@ -403,7 +404,7 @@ This document records every major technical and product decision for the Sports 
 
 ## ADR-020: Vercel for Hosting
 
-**Status:** Accepted
+**Status:** Superseded by ADR-021 (Vercel Hobby remains a conditional candidate only)
 
 **Context:** Next.js native host, free tier, preview deployments per PR.
 
@@ -413,11 +414,74 @@ This document records every major technical and product decision for the Sports 
 
 ---
 
+## ADR-021: Auth0 Identity, Database-Enforced RBAC, and Free-Tier-First Services
+
+**Status:** Accepted, subject to the verification gates in [Repository Audit](./19_REPOSITORY_AUDIT.md)
+
+**Context:** The product must remain buildable, testable, and deployable at $0 ongoing cost. The existing M3 implementation uses Supabase Auth despite the project preference for Auth0. Community-specific roles are dynamic product data and must not depend on client-provided claims or a paid identity feature.
+
+**Decision:**
+
+- Use Auth0 as the single identity provider; Google is a federated Auth0 connection.
+- Use Supabase for PostgreSQL, migrations, and RLS, not Supabase Auth. Apply the official Auth0 third-party integration and verify the free-tier/payment/terms requirements before hosting.
+- Keep `platform_role` and `community_members.role` in trusted PostgreSQL rows and enforce authorization in RLS and protected RPCs.
+- Map validated Auth0 issuer + subject to a stable internal UUID profile. Migrate the existing `auth.users` and `auth.uid()` assumptions before M3 is accepted.
+- Do not rely on Auth0 Organizations or per-Organization RBAC for community permissions; pricing lists per-Organization RBAC as an Essentials feature. If Auth0's free entitlements or terms fail verification, do not upgrade or incur cost; pause production adoption and preserve local development.
+- Select hosting only after its current free allowance, runtime limits, payment requirements, and product-use terms are verified. Vercel Hobby is not automatically suitable because it restricts use to personal/non-commercial projects.
+- Every external service decision and dated official evidence is recorded in [Repository Audit](./19_REPOSITORY_AUDIT.md).
+
+**Alternatives Considered:**
+
+| Alternative | Why rejected |
+|---|---|
+| Supabase Auth as the app IdP | Conflicts with the Auth0 single-IdP requirement |
+| Auth0 Organizations for each sports community | Adds unnecessary identity-provider coupling; per-Organization RBAC is not included in the verified Free feature list |
+| Browser-only or token-claim-only community roles | Not authoritative or sufficient for RLS enforcement |
+| Automatically upgrade or accept overages | Violates the explicit $0 budget constraint |
+
+**Consequences:**
+
+- M3 must migrate authentication code, profile provisioning, RLS policies, and RPC caller resolution before M4 proceeds.
+- Auth0 SDK session validation and Auth0-to-Supabase JWT behavior require unit/integration tests.
+- Hosting and managed database availability remain conditional on current official free-tier terms and recovery guarantees.
+- Local development, lint, typecheck, unit tests, and builds must not require provider credentials.
+
+**Future Revisit Criteria:** A product requirement or verified provider-plan change materially alters identity, tenant authorization, recovery, or free-tier suitability. Any change requires a new ADR and re-audit before adoption.
+
+---
+
+## ADR-022: RallyNook Product Brand
+
+**Status:** Accepted (preliminary market scan; formal trademark clearance remains outstanding)
+
+**Context:** The product needs a memorable consumer-facing name that fits casual sports communities and event participation without suggesting facility or court booking.
+
+**Decision:** Use **RallyNook** as the product brand. Keep `sports-community-app` as the Git repository name. Update user-visible product copy, project metadata, and the Auth0 application's display name; do not change the Auth0 tenant identifier.
+
+**Alternatives Considered:**
+
+| Name | Finding in preliminary scan |
+|---|---|
+| RallyRoster | `.com` domain already registered |
+| RallyNest | `.com` domain already registered |
+| RallyCrew | Existing sports-community application/brand |
+| RallyNook | Exact-name searches did not surface an obvious direct product conflict; [Verisign RDAP](https://rdap.verisign.com/com/v1/domain/rallynook.com) returned no `.com` registration record on 2026-10-11. Broader results include unrelated “RALLY” marks; formal trademark clearance is outstanding. |
+
+**Consequences:**
+
+- Brand phrasing emphasizes community events, RSVPs, and participation—not court reservations.
+- Domain and trademark status must be independently verified before public launch; preliminary search results are not legal clearance.
+- The existing Auth0 tenant URL remains unchanged. Its application display name can match the product brand.
+
+**Future Revisit Criteria:** Formal trademark review identifies a conflict, the domain/brand cannot be secured, or user research shows the name is confusing.
+
+---
+
 ## Decision Log Maintenance
 
 When adding a new ADR:
 
-1. Assign next number (ADR-021+)
+1. Assign next number (ADR-022+)
 2. Include Status, Context, Decision, Alternatives, Consequences, Future Revisit Criteria
 3. Cross-link from affected docs
 4. Mark superseded ADRs as **Superseded by ADR-XXX** rather than deleting

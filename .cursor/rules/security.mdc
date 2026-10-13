@@ -18,6 +18,9 @@ Read `docs/08_SECURITY.md`, `docs/06_RBAC.md`, and `docs/07_AUTHENTICATION.md`.
 ## Authorization
 
 - RLS is the authoritative enforcement layer
+- Auth0 is the only identity provider; Google is an Auth0 connection, not a second app IdP
+- Use the verified Auth0 issuer + subject to resolve an internal profile ID; never cast `sub` to UUID
+- Keep application roles in trusted PostgreSQL data; the Supabase JWT `role: authenticated` claim is not an app persona
 - UI role checks are defense-in-depth only
 - Join/leave/remove via SECURITY DEFINER RPC with internal auth checks
 - Validate community membership before event operations
@@ -31,9 +34,16 @@ Read `docs/08_SECURITY.md`, `docs/06_RBAC.md`, and `docs/07_AUTHENTICATION.md`.
 
 ## Session
 
-- Server-side: always `getUser()` not `getSession()`
+- Validate the server-side Auth0 session with the official Next.js SDK
+- Pass the Supabase-supported Auth0 ID token only from the server session to the server-side Supabase client
 - OAuth return URLs: same-origin relative paths only for `next` param
 - HTTPS only in production
+
+## Budget
+
+- Verify current pricing, quotas, payment requirements, terms, and feature restrictions from official documentation
+- Never enable billing, upgrade, or accept charges without explicit authorization
+- Do not treat free trials or credits as a free tier
 
 ## Rate Limiting
 

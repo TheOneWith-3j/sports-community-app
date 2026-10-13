@@ -14,7 +14,8 @@ Read `docs/09_API_STRATEGY.md`, `docs/04_SYSTEM_ARCHITECTURE.md`, and `docs/07_A
 - Mark with `"use server"`
 - Validate ALL inputs with Zod from `src/lib/validations/`
 - Return `ActionResult<T>` — never throw to client
-- Auth: `supabase.auth.getUser()` — use `getUser()` not `getSession()`
+- Auth: validate the Auth0 session with the official Next.js SDK
+- Database: pass the SDK-held Auth0 ID token to Supabase server-side only, following `docs/07_AUTHENTICATION.md`
 - Log errors: `console.error('[actionName]', { userId, error })`
 - Revalidate affected paths after success
 
@@ -38,4 +39,4 @@ Read `docs/09_API_STRATEGY.md`, `docs/04_SYSTEM_ARCHITECTURE.md`, and `docs/07_A
 
 ## No REST API
 
-Do not create CRUD Route Handlers for MVP. Exception: OAuth callback at `/auth/callback`.
+Do not create CRUD Route Handlers for MVP. Use the current official Auth0 SDK route conventions for login/callback/logout.

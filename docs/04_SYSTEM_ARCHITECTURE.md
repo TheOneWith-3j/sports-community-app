@@ -15,7 +15,7 @@
 
 ## Overview
 
-The Sports Community Platform is a **modular monolith**: a single Next.js application deployed on Vercel, backed by Supabase (PostgreSQL + Auth + RLS). There are no microservices. Feature boundaries are enforced by folder structure and module exports, not network boundaries.
+RallyNook is a **modular monolith**: a single Next.js application backed by Supabase PostgreSQL and RLS, with Auth0 as its single identity provider. Hosting remains subject to free-tier and product-eligibility review in the [Repository Audit](./19_REPOSITORY_AUDIT.md). There are no microservices. Feature boundaries are enforced by folder structure and module exports, not network boundaries.
 
 **This is not a court booking system.** The architecture models event participation, not facility reservations.
 
@@ -31,7 +31,7 @@ flowchart TB
     Guest[Guest]
   end
 
-  subgraph vercel [Vercel]
+  subgraph host [Approved eligible host]
     MW[Next.js Middleware]
     subgraph app [Next.js App Router]
       RSC[Server Components]
@@ -41,8 +41,11 @@ flowchart TB
     end
   end
 
+  subgraph auth0 [Auth0]
+    OIDC[OIDC / Google connection]
+  end
+
   subgraph supabase [Supabase]
-    SAuth[Supabase Auth]
     PG[(PostgreSQL)]
     RLS[Row Level Security]
     Storage[Storage - avatars]
@@ -54,12 +57,11 @@ flowchart TB
   MW --> RSC
   RSC --> SA
   RCC --> SA
-  SA --> SAuth
+  SA --> OIDC
   SA --> PG
-  SAuth --> PG
   PG --> RLS
   SA --> Storage
-  RH --> SAuth
+  RH --> OIDC
 ```
 
 ---
@@ -74,10 +76,10 @@ flowchart TB
 | Mutations | Server Actions | Form submissions, join/leave |
 | Reads | Server Components + Supabase server client | Data fetching at request time |
 | Validation | Zod | Runtime input validation |
-| Auth | Supabase Auth + `@supabase/ssr` | Sessions, OAuth |
+| Auth | Auth0 + official Next.js SDK | OIDC login, identity, server session |
 | Data | PostgreSQL via Supabase | Persistent storage |
 | Authorization | RLS policies | Database-enforced RBAC |
-| Hosting | Vercel | SSR, edge middleware, CI |
+| Hosting | TBD after free-tier/terms review | Must fit Next.js runtime and product use |
 
 ---
 
@@ -124,9 +126,7 @@ sports-community-app/
 │   │   └── attendance/
 │   ├── lib/
 │   │   ├── supabase/
-│   │   │   ├── client.ts    # Browser client
-│   │   │   ├── server.ts    # Server client
-│   │   │   └── middleware.ts
+│   │   │   └── server.ts    # User-scoped DB client with verified Auth0 JWT
 │   │   ├── validations/     # Zod schemas
 │   │   ├── utils/
 │   │   └── constants/
@@ -134,7 +134,7 @@ sports-community-app/
 │   │   ├── database.ts      # Generated Supabase types
 │   │   └── index.ts
 │   └── hooks/               # Client-only hooks
-├── middleware.ts            # Session refresh, route protection
+├── proxy.ts / middleware.ts # Follow current Next.js and Auth0 SDK conventions
 ├── next.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
@@ -166,20 +166,21 @@ sequenceDiagram
 
   Browser->>SA: Form action / mutation
   SA->>SA: Zod validate
-  SA->>Supabase: RPC or insert/update
-  Supabase->>DB: Transaction + RLS
+  SA->>DB: RPC or query using user-scoped Auth0 JWT
+  DB->>DB: Transaction + RLS
   DB-->>Supabase: Result
   Supabase-->>SA: Response
   SA-->>Browser: revalidatePath + result
 ```
 
-### Middleware (`middleware.ts`)
+### Route protection
 
-1. Create Supabase server client from cookies
-2. Call `supabase.auth.getUser()` to refresh session
-3. Protect `(dashboard)/**` — redirect to `/login` if unauthenticated
-4. Redirect authenticated users away from `/login` to dashboard
-5. Public routes `/e/[slug]` pass through without auth
+1. Follow the current Auth0 Next.js SDK routing/session conventions.
+2. Resolve and validate the server-side Auth0 session.
+3. Protect dashboard routes as an early-rejection/UX layer.
+4. Redirect authenticated users away from `/login`.
+5. Enforce authorization again in every server operation and PostgreSQL RLS policy.
+6. Public routes `/e/[slug]` remain accessible without auth where policy permits.
 
 ### Server Components (default)
 
@@ -247,19 +248,17 @@ See [Authentication](./07_AUTHENTICATION.md) for detail.
 sequenceDiagram
   participant User
   participant App
-  participant SupabaseAuth as Supabase Auth
+  participant Auth0
   participant Google
   participant DB
 
   User->>App: Click Continue with Google
-  App->>SupabaseAuth: signInWithOAuth google
-  SupabaseAuth->>Google: OAuth redirect
-  Google-->>SupabaseAuth: Authorization code
-  SupabaseAuth->>DB: Create auth.users
-  DB->>DB: Trigger create profiles row
-  SupabaseAuth-->>App: Redirect to /auth/callback
-  App->>App: Exchange code, set cookies
-  App-->>User: Redirect to dashboard or return URL
+  App->>Auth0: Begin OIDC + PKCE login
+  Auth0->>Google: Federated login
+  Google-->>Auth0: User authentication
+  Auth0-->>App: Validated callback
+  App->>App: SDK establishes secure session
+  App->>DB: Map verified issuer + subject to application profile
 ```
 
 ---
@@ -325,15 +324,15 @@ Do not cache user-specific data at CDN without careful keying. Default to dynami
 
 ## Scalability
 
-### MVP Scale (Free Tier)
+### MVP Scale (budget-constrained)
 
-- Hundreds of communities, thousands of users
+- Validate expected usage against current audited provider quotas; no capacity is guaranteed by a nominally free tier
 - Join bursts handled by PostgreSQL transaction isolation
 - Participant list pagination at 50+ rows
 
 ### Growth Path
 
-1. **Read replicas** — Supabase Pro read replicas for dashboard queries
+1. **Read replicas** — Consider only after a user-approved budget change; not required by the $0 design
 2. **Connection pooling** — Supabase Supavisor (built-in)
 3. **Realtime** — Supabase Realtime for live participant lists (post-MVP)
 4. **Background jobs** — Supabase Edge Functions + pg_cron for notifications (post-MVP)
@@ -354,7 +353,7 @@ Not in MVP. Documented for architecture continuity:
 | Soft delete purge | Weekly cron | Hard delete rows deleted > 1 year |
 | Analytics aggregation | Nightly | Roll up attendance stats |
 
-Implementation: Supabase Edge Functions or Vercel Cron invoking secure endpoints with service role.
+Implementation: use a free, durable mechanism only after verifying its limits. Do not add a paid scheduler or assume serverless cron availability.
 
 ---
 
@@ -362,12 +361,12 @@ Implementation: Supabase Edge Functions or Vercel Cron invoking secure endpoints
 
 | Concern | Tool |
 |---------|------|
-| Uptime | Vercel Analytics |
+| Uptime | Approved host's included monitoring |
 | Errors | Sentry (future) |
 | Database | Supabase Dashboard metrics |
-| Performance | Vercel Speed Insights |
+| Performance | Local free tools or approved host's included metrics |
 
-MVP relies on Vercel and Supabase built-in dashboards.
+Use only provider monitoring included in an approved free plan; do not send user-specific data to a third-party analytics service without review.
 
 ---
 
@@ -376,9 +375,11 @@ MVP relies on Vercel and Supabase built-in dashboards.
 | Variable | Scope | Description |
 |----------|-------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Client + Server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client + Server | Anon/public key (RLS enforced) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Client + Server | Publishable key (RLS enforced) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only (scripts) | Bypass RLS; never in user paths |
-| `NEXT_PUBLIC_APP_URL` | Client + Server | Canonical app URL for OAuth redirects |
+| `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` | Server/configuration | Auth0 tenant and app configuration |
+| `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET` | Server only | Auth0 SDK/session secrets |
+| `APP_BASE_URL` | Server/configuration | Canonical app URL |
 
 See [Deployment](./13_DEPLOYMENT.md) for full list.
 
@@ -431,13 +432,10 @@ Full detail: [Security](./08_SECURITY.md).
 
 ```mermaid
 flowchart LR
-  Git[GitHub Repo] --> VercelCI[Vercel CI]
-  VercelCI --> Preview[Preview Deploy]
-  VercelCI --> Prod[Production Deploy]
-  Prod --> EdgeNetwork[Vercel Edge]
-  EdgeNetwork --> Serverless[Serverless Functions]
-  Serverless --> SupabaseProd[Supabase Production]
-  Preview --> SupabaseStaging[Supabase Staging]
+  Git[GitHub Repo] --> Actions[GitHub Actions CI]
+  Actions --> Host[Approved eligible Next.js host]
+  Host --> DB[Approved PostgreSQL service]
+  Host --> Auth0[Auth0 identity]
 ```
 
 See [Deployment](./13_DEPLOYMENT.md).

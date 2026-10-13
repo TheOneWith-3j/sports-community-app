@@ -13,7 +13,7 @@
 
 ## Overview
 
-Testing strategy for the Sports Community Platform using **Vitest** (unit/integration) and **Playwright** (E2E). Tests validate critical business rules: FCFS join, waitlist, auto-promotion, and RBAC.
+Testing strategy for RallyNook using **Vitest** (unit/integration) and **Playwright** (E2E). Tests validate critical business rules: FCFS join, waitlist, auto-promotion, and RBAC.
 
 ---
 
@@ -341,7 +341,7 @@ jobs:
 ### Local Development
 
 - Supabase seed script with test community, events, users
-- `supabase db reset` loads seed
+- `pnpm exec supabase db reset` loads seed
 
 ### E2E
 

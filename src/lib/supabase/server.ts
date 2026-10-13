@@ -1,29 +1,29 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
+import { getAuth0Client, isAuth0Configured } from "@/lib/auth0";
 import { env } from "@/lib/env";
-
-export type Database = Record<string, never>;
+import type { Database } from "@/types/database";
 
 export async function createServerSupabaseClient() {
-  const cookieStore = await cookies();
+  const session = isAuth0Configured()
+    ? await getAuth0Client().getSession()
+    : null;
+  const idToken = session?.tokenSet.idToken;
 
-  return createServerClient<Database>(
+  if (session && !idToken) {
+    throw new Error("The authenticated Auth0 session does not contain an ID token.");
+  }
+
+  return createClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          } catch {
-            // Ignore cookie write failures in the server client initialization path.
-          }
-        },
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
       },
+      ...(idToken ? { accessToken: async () => idToken } : {}),
     },
   );
 }

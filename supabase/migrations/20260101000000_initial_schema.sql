@@ -65,8 +65,7 @@ CREATE TABLE events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at TIMESTAMPTZ,
-  CONSTRAINT events_end_after_start CHECK (ends_at > starts_at),
-  UNIQUE (share_slug) WHERE (deleted_at IS NULL)
+  CONSTRAINT events_end_after_start CHECK (ends_at > starts_at)
 );
 
 CREATE TABLE event_participants (
@@ -108,7 +107,7 @@ CREATE INDEX idx_communities_owner ON communities (owner_id) WHERE deleted_at IS
 CREATE INDEX idx_community_members_profile ON community_members (profile_id);
 CREATE INDEX idx_community_members_community_role ON community_members (community_id, role);
 CREATE INDEX idx_events_community_starts ON events (community_id, starts_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_events_share_slug ON events (share_slug) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX idx_events_share_slug ON events (share_slug) WHERE deleted_at IS NULL;
 CREATE INDEX idx_events_status ON events (status) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX idx_event_participants_active_unique ON event_participants (event_id, profile_id) WHERE status IN ('confirmed', 'waitlisted');
 CREATE INDEX idx_event_participants_event_status ON event_participants (event_id, status);

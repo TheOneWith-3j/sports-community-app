@@ -88,7 +88,7 @@ User-facing messages in `error.message` — never expose Postgres error text.
 
 | Action | Input Schema | Output | Milestone |
 |--------|--------------|--------|-----------|
-| `updateProfile` | `updateProfileSchema` | `ActionResult<Profile>` | M4 |
+| `updateProfile` | `updateProfileSchema` | `ActionResult<Profile>`; saves profile fields and completes first-login onboarding | M4 |
 
 ```typescript
 // src/lib/validations/profile.ts

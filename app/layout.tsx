@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sports Community App",
-  description: "A premium sports community platform for event participation and FCFS join flows.",
+  title: "RallyNook",
+  description: "Your corner for community sports events, simple RSVPs, and fair waitlists.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

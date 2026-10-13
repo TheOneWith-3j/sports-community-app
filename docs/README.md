@@ -1,6 +1,6 @@
 # Documentation Index
 
-Single source of truth for the Sports Community Platform — a premium event participation management system for sports communities (badminton, pickleball, and any activity). **This is not a court booking system.**
+Single source of truth for RallyNook — a premium event participation management system for sports communities (badminton, pickleball, and any activity). **This is not a court booking system.**
 
 ---
 
@@ -11,7 +11,8 @@ Single source of truth for the Sports Community Platform — a premium event par
 1. [Implementation Plan](./16_IMPLEMENTATION_PLAN.md) — find current milestone (M0–M18)
 2. [AI Development Guide](./15_AI_DEVELOPMENT_GUIDE.md) — session protocol and prompt templates
 3. Milestone-specific docs listed in the plan section
-4. [.cursor/rules/](../.cursor/rules/) — auto-applied guardrails
+4. [Repository and Free-Tier Audit](./19_REPOSITORY_AUDIT.md) — budget and service-selection constraints
+5. [.cursor/rules/](../.cursor/rules/) — auto-applied guardrails
 
 **Golden rule:** Implement one milestone at a time. Docs override training data.
 
@@ -47,10 +48,11 @@ Single source of truth for the Sports Community Platform — a premium event par
 | [04 System Architecture](./04_SYSTEM_ARCHITECTURE.md) | Diagrams, folder structure, lifecycle |
 | [05 Database Design](./05_DATABASE_DESIGN.md) | Schema, ER diagram, RPC functions |
 | [06 RBAC](./06_RBAC.md) | Permission matrix and RLS policies |
-| [07 Authentication](./07_AUTHENTICATION.md) | Google OAuth, sessions, future OTP |
+| [07 Authentication](./07_AUTHENTICATION.md) | Auth0 identity, Google connection, sessions, JWT integration |
 | [08 Security](./08_SECURITY.md) | OWASP, secrets, rate limiting |
 | [09 API Strategy](./09_API_STRATEGY.md) | Server Actions catalog, error contracts |
 | [18 Decisions](./18_DECISIONS.md) | Architecture Decision Records |
+| [19 Repository Audit](./19_REPOSITORY_AUDIT.md) | Free-tier service evaluation, budget constraints, and verification evidence |
 
 ### Design
 
@@ -64,7 +66,7 @@ Single source of truth for the Sports Community Platform — a premium event par
 | Doc | Description |
 |-----|-------------|
 | [12 Testing](./12_TESTING.md) | Vitest, Playwright, QA checklists |
-| [13 Deployment](./13_DEPLOYMENT.md) | Vercel, Supabase, CI/CD |
+| [13 Deployment](./13_DEPLOYMENT.md) | Local workflow, conditional hosting, Supabase database, CI/CD |
 | [14 Coding Standards](./14_CODING_STANDARDS.md) | Naming, patterns, conventions |
 | [15 AI Development Guide](./15_AI_DEVELOPMENT_GUIDE.md) | AI workflow and recovery |
 | [16 Implementation Plan](./16_IMPLEMENTATION_PLAN.md) | Milestones M0–M18 |
@@ -114,6 +116,6 @@ flowchart LR
 
 ## Repository Status
 
-**Current phase:** Documentation bootstrap complete. Application implementation begins at **M0** in [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
+**Current phase:** M0–M4 are complete; M5 Community Creation is next. Auth0/Supabase identity integration and authenticated profile settings/onboarding have been verified. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
 
-No application code exists until M0 is executed.
+**Product brand:** RallyNook. Preliminary market scan only; see [Product Vision](./01_PRODUCT_VISION.md) and [ADR-022](./18_DECISIONS.md#adr-022-rallynook-product-brand). Formal trademark clearance is outstanding.

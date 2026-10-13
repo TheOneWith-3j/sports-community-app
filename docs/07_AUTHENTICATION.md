@@ -7,296 +7,191 @@
 - [Security](./08_SECURITY.md)
 - [System Architecture](./04_SYSTEM_ARCHITECTURE.md)
 - [Database Design](./05_DATABASE_DESIGN.md)
+- [Repository Audit](./19_REPOSITORY_AUDIT.md)
 - [Decisions](./18_DECISIONS.md)
 
 ---
 
-## Overview
+## Status and provider boundary
 
-Authentication is handled by **Supabase Auth** with session management via `@supabase/ssr`. MVP supports **Google OAuth** only. The architecture supports adding Phone OTP and Email OTP later without schema changes.
+**Target:** Auth0 is the single identity provider. Google OAuth is configured as an Auth0 social connection, not as a second app identity provider. Supabase is used for PostgreSQL, migrations, RLS, and optional Storage—not Supabase Auth.
 
-Authorization (what users can do) is separate — see [RBAC](./06_RBAC.md).
+**Implementation status:** Auth0 MCP onboarding created the Regular Web Application and saved its credentials to ignored `.env.local`; the SDK wiring and forward database migrations are in place. The `RallyNook Supabase JWT Role Claim` Post-Login Action is built, deployed, and attached to the Login trigger. A real Auth0 sign-in reached Supabase, provisioned an issuer-bound profile, and sign-out was confirmed. All five hosted migrations are applied, and all 22 SQL regression assertions passed via `supabase db query --linked --file`. Authenticated profile onboarding, RLS-scoped updates, persistence, and inline validation were verified in the browser. The official `supabase test db --linked` runner remains unavailable without Docker/Podman. Expired- and wrong-audience-token rejection were not separately exercised. M3 and M4 are complete; see [Implementation Plan](./16_IMPLEMENTATION_PLAN.md) and [Repository Audit](./19_REPOSITORY_AUDIT.md).
 
----
+Use the [official Auth0 Next.js SDK](https://auth0.com/docs/quickstart/webapp/nextjs) and its current App Router integration pattern. Use standards-based OIDC/OAuth Authorization Code Flow with PKCE and the SDK-managed server session. Do not build password storage, token issuance, or OAuth protocol handling from scratch.
 
-## MVP Authentication Methods
+## Authentication methods
 
 | Method | Status | Provider |
-|--------|--------|----------|
-| Google OAuth | MVP | Supabase Auth + Google Cloud Console |
-| Phone OTP | Future | Supabase Auth Phone provider |
-| Email OTP / Magic Link | Future | Supabase Auth Email provider |
-| Email/Password | Not planned | — |
+|---|---|---|
+| Google social login | MVP | Google connection managed by Auth0 |
+| Phone OTP | Future, only if required | Evaluate Auth0 free-plan support and all provider costs first |
+| Email OTP / magic link | Future, only if required | Evaluate Auth0 free-plan support and terms first |
+| Email/password | Not planned | No application-managed passwords |
 
----
+Do not add Supabase Auth or another IdP. Account linking and additional login methods require a product requirement and a documented security review.
 
-## Authentication Flow (Google OAuth)
+## Sign-in and session flow
 
 ```mermaid
 sequenceDiagram
   participant User
-  participant LoginPage as /login
-  participant SupabaseAuth as Supabase Auth
-  participant Google as Google OAuth
-  participant Callback as /auth/callback
-  participant Middleware
-  participant Dashboard
+  participant App as Next.js App
+  participant SDK as Auth0 Next.js SDK
+  participant Auth0
+  participant Google
+  participant Callback as Auth0 SDK callback route
+  participant DB as Supabase PostgreSQL + RLS
 
-  User->>LoginPage: Visit /login
-  User->>LoginPage: Click Continue with Google
-  LoginPage->>SupabaseAuth: signInWithOAuth provider google
-  SupabaseAuth->>Google: Redirect to Google consent
-  Google->>User: Consent screen
-  User->>Google: Approve
-  Google->>SupabaseAuth: Authorization code
-  SupabaseAuth->>Callback: Redirect with code
-  Callback->>SupabaseAuth: exchangeCodeForSession
-  SupabaseAuth->>Callback: Session tokens
-  Callback->>Callback: Set httpOnly cookies
-  Callback->>Dashboard: Redirect to next or /dashboard
-  User->>Middleware: Subsequent requests
-  Middleware->>Middleware: Refresh session from cookies
+  User->>App: Select Continue with Google
+  App->>SDK: Start SDK login (state + PKCE)
+  SDK->>Auth0: OIDC authorization request
+  Auth0->>Google: Federated authentication
+  Google-->>Auth0: User authentication
+  Auth0-->>Callback: Authorization response
+  Callback->>SDK: Validate callback and establish server session
+  SDK-->>App: Secure session cookie
+  App->>DB: Server request with Auth0 JWT via Supabase third-party integration
+  DB->>DB: Verify JWT and apply RLS
 ```
 
----
+The SDK handles state, nonce, PKCE, callback validation, session storage, and logout according to its current documented pattern. The application must not put ID/access tokens in URLs, local storage, logs, or client-visible props. Session cookies must be Secure in production, HttpOnly, and use an appropriate SameSite policy.
 
-## Session Management
+For logout, use `/auth/logout` without a relative `returnTo` when the default app-base redirect is acceptable. The SDK sends a supplied `returnTo` directly as Auth0's `post_logout_redirect_uri`, which must be an absolute URL registered in the Auth0 application's **Allowed Logout URLs** (for example, `http://localhost:3000/login`), not the path `/login`.
 
-### Cookie Strategy
+## Token and Supabase integration
 
-Supabase SSR uses secure cookies managed by `@supabase/ssr`:
+Follow the [official Supabase Auth0 third-party integration](https://supabase.com/docs/guides/auth/third-party/auth0) rather than inventing token plumbing. The current guide requires an Auth0 Post-Login Action to add the literal `role: "authenticated"` claim to the **ID token** and passing that ID token to Supabase. The server may obtain it from the SDK-managed session token set and provide it only to the server-side Supabase client. Require it to be present; do not expose it to browser JavaScript or logs. This claim selects a PostgreSQL role; it does **not** grant an application persona.
 
-| Cookie | Purpose |
-|--------|---------|
-| `sb-access-token` | Short-lived JWT |
-| `sb-refresh-token` | Refresh token for session renewal |
+Configure a Post-Login Action for the Auth0 application:
 
-Configured in Supabase server client. In production:
-
-- `Secure` flag enabled (HTTPS only)
-- `SameSite=Lax` (default Supabase SSR behavior)
-- `HttpOnly` where supported by Supabase cookie adapter
-
-### Session Refresh
-
-`middleware.ts` runs on every matched request:
-
-1. Create Supabase server client from request cookies
-2. Call `supabase.auth.getUser()` — refreshes expired tokens
-3. Write updated cookies to response
-4. Pass refreshed session to Server Components
-
-### Session Duration
-
-- Default Supabase JWT expiry: 1 hour (configurable in Supabase Dashboard)
-- Refresh token: long-lived; rotated on refresh
-- User stays signed in across browser restarts until explicit sign-out or refresh token revocation
-
----
-
-## Profile Creation on Sign-Up
-
-When a new user authenticates, Supabase creates `auth.users`. A database trigger creates `profiles`:
-
-```sql
--- See Database Design for full trigger
-INSERT INTO profiles (id, display_name, avatar_url)
-VALUES (NEW.id, name_from_google_meta, avatar_from_google_meta);
-```
-
-Default `platform_role = 'member'`.
-
-First-time users may be redirected to `/onboarding` to confirm display name (M4).
-
----
-
-## Protected Routes
-
-### Middleware Matcher
-
-```typescript
-// middleware.ts (to be implemented M3)
-export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/login',
-    '/onboarding',
-  ],
+```js
+exports.onExecutePostLogin = async (_event, api) => {
+  api.idToken.setCustomClaim("role", "authenticated");
 };
 ```
 
-### Route Protection Rules
+Attach the deployed Action to the **Login / Post Login (`post-login`) trigger**. In the current Auth0 Dashboard, open **Actions → Triggers → Login** and add the Action there; older instructions may call this **Actions → Flows → Login**. Ensure the tenant ID and region match the local Supabase `[auth.third_party.auth0]` settings.
 
-| Route | Auth Required | Redirect |
-|-------|---------------|----------|
-| `/` | No | — |
-| `/login` | No (redirect if authenticated) | → `/dashboard` |
-| `/e/[slug]` | No (public event view) | — |
-| `/dashboard/**` | Yes | → `/login?next={path}` |
-| `/onboarding` | Yes | — |
+- Verify the Auth0 issuer, JWT signature, expiry, intended application audience, and required Supabase `role: authenticated` claim through the official integration and SDK.
+- Missing, invalid, or expired credentials must fail closed for protected operations.
+- Never trust roles from browser input, user-editable metadata, or arbitrary token claims.
+- `platform_role` and `community_members.role` are application authorization data held in PostgreSQL and enforced by RLS.
+- Auth0 Organization roles are not used for community access; the free-tier audit identifies per-Organization RBAC as a paid-plan capability.
+- Do not copy Supabase Auth's `auth.users` lifecycle assumptions into the Auth0 integration.
+- The MVP has no separate public REST API, so community permissions are checked in server operations and RLS rather than delegated to token scopes. If a public API is added, require Auth0 access tokens minted for that API and validate signature, issuer, audience, expiry, and required permissions server-side.
 
-### Return URL
+### Stable application profile identity
 
-After login, redirect to `next` query param if present and safe (same-origin path only):
+Auth0 subjects are external string identifiers and are never application UUIDs. Migration `20260101000003_auth0_identity.sql` preserves internal `profiles.id` values, adds a unique issuer/subject binding, and moves caller lookups to `current_profile_id()`. It also removes the Supabase Auth profile trigger, rewrites RLS policies and SECURITY DEFINER RPCs, provisions profiles idempotently from trusted claims, and prevents authenticated users from changing platform roles or identity bindings.
 
-```typescript
-const next = searchParams.get('next');
-const redirectTo = next?.startsWith('/') ? next : '/dashboard';
-```
+Legacy profiles are intentionally not auto-linked by email. An account migration or unlink/deletion flow is not implemented; if existing user data must be preserved, define a trusted migration process before deployment. pgTAP regression coverage is in `supabase/tests/20260101000003_auth0_identity.test.sql`, but it still needs to run against local Supabase. Never cast Auth0 `sub` directly to UUID or treat it as an application profile UUID.
 
----
+## Routes and redirects
 
-## Sign Out
+| Route | Auth required | Behavior |
+|---|---|---|
+| `/` | No | Public landing page |
+| `/login` | No | Start Auth0 login; authenticated users go to dashboard |
+| `/e/[slug]` | No | Public event view |
+| `/dashboard/**` | Yes | Redirect to login with a safe return path |
+| `/onboarding` | Yes | Complete a missing application profile |
 
-```typescript
-// Server Action: signOut
-await supabase.auth.signOut();
-redirect('/login');
-```
+Only accept same-origin relative return paths. Reject protocol-relative paths, external URLs, malformed encodings, and unexpected schemes. Protect every Server Action, Route Handler, and data query server-side; route middleware and hidden controls are supplemental only.
 
-Clears session cookies. Client-side cache invalidated via `revalidatePath`.
+## Profile lifecycle
 
----
+On first successful Auth0 login, create or resolve an application profile by trusted `iss` + `sub` in a transaction or an equivalent race-safe server/database operation. Store only profile data needed by the product; do not rely on Supabase Auth triggers. Default the trusted database `platform_role` to `member`; super-admin grants are explicit, audited, and never self-service.
 
-## Supabase Client Setup
+Profile creation and login must be idempotent. Do not create duplicate profiles during concurrent callbacks. An absent or inconsistent mapping must fail safely and be observable without logging tokens or unnecessary personal data.
 
-### Browser Client (`src/lib/supabase/client.ts`)
+## Sign-out and failures
 
-- Used in Client Components only
-- Uses `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- Respects RLS with user JWT
+Use the SDK's logout flow to clear the application session and Auth0 session as appropriate, then redirect to a validated local destination. Handle cancelled login, callback/state/nonce failures, provider outage, invalid session, and quota/rate limits with safe retryable messages. Never claim a user was authenticated if the callback or session validation failed.
 
-### Server Client (`src/lib/supabase/server.ts`)
+## Configuration
 
-- Used in Server Components, Server Actions, Route Handlers
-- Reads/writes cookies via `cookies()` from `next/headers`
-- Never uses service role key
+Exact variable names must follow the current SDK configuration. The Supabase integration uses the Auth0 ID token; do not add an API audience or request an access token unless the selected SDK/integration configuration requires it. Keep all secrets server-only:
 
-### Middleware Client (`src/lib/supabase/middleware.ts`)
+| Variable | Required | Scope |
+|---|---|---|
+| `AUTH0_DOMAIN` | Yes | Server |
+| `AUTH0_CLIENT_ID` | Yes | Server/configuration |
+| `AUTH0_CLIENT_SECRET` | Yes | Server secret |
+| `AUTH0_SECRET` | Yes | Server secret used to protect session |
+| `APP_BASE_URL` | Yes | Server/configuration |
+| Supabase URL and publishable key | Database integration | Publishable; RLS is mandatory |
 
-- Specialized client for middleware cookie read/write pattern per Supabase SSR docs
+Safe empty placeholders belong in `.env.example`; real values stay in ignored `.env.local` or deployment secrets. Never expose client secrets, signing secrets, Management API tokens, or privileged database keys with a `NEXT_PUBLIC_` prefix.
 
----
+### Auth0 application and local setup
 
-## Google OAuth Configuration
+Auth0 MCP onboarding created the application and saved its credentials locally. It also configured the callback/logout URLs and enabled Auth0's `skip_non_verifiable_callback_uri_confirmation_prompt` setting for the localhost callback. No secrets should be sent in chat. Finish these remaining steps:
 
-### Google Cloud Console
+1. Open the new application's [Auth0 settings](https://manage.auth0.com/dashboard/us/dev-viqq4bj1e522n2ob/applications/z0a11AOEiIFkfewIP0pLXA3qej7p0SPg/settings). The onboarding tool configured:
+   - **Allowed Callback URLs:** `http://localhost:3000/auth/callback`
+   - **Allowed Logout URLs:** `http://localhost:3000/`
+   - **Skip non-verifiable callback URI confirmation:** enabled
+2. Confirm the application uses the default **RS256** signing algorithm; Supabase does not support HS256 or PS256 for this integration.
+3. The project owner enabled the Google connection for the application. We verified that the app's `google-oauth2` login route redirects to Google's sign-in page and that Auth0 Universal Login presents **Continue with Google**. For development, use Auth0's test/development provider keys if offered; otherwise configure Google's OAuth client in the connection settings.
+4. The `RallyNook Supabase JWT Role Claim` Action was created and deployed through Auth0 MCP; the project owner confirmed attaching it to the Login trigger under **Actions → Triggers → Login**. Older dashboard instructions may refer to **Actions → Flows → Login**; the current dashboard groups these under Triggers. If it must be recreated, select **Login / Post Login** and use:
 
-1. Create OAuth 2.0 Client ID (Web application)
-2. Authorized JavaScript origins: `http://localhost:3000`, `https://{production-domain}`
-3. Authorized redirect URIs: Supabase callback URL from Supabase Dashboard
+   ```js
+   exports.onExecutePostLogin = async (event, api) => {
+     api.idToken.setCustomClaim("role", "authenticated");
+   };
+   ```
 
-### Supabase Dashboard
+   The `role` claim belongs on the ID token; do not set application roles in Auth0.
+5. The local Supabase Auth0 integration is enabled in `supabase/config.toml` for tenant `dev-viqq4bj1e522n2ob` in region `us`.
+6. Auth0 MCP saved `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`, and `APP_BASE_URL` to ignored `.env.local`. Do not overwrite, open, or share that file. Generate a new session secret only for another environment:
 
-1. Authentication → Providers → Google: Enable
-2. Enter Google Client ID and Client Secret
-3. Copy Supabase callback URL to Google Console
+   ```bash
+   openssl rand -hex 32
+   ```
 
-### Environment Variables
+   Store that output only as `AUTH0_SECRET` in another environment's ignored `.env.local`. Never send or commit the secret.
+7. For hosted integration, use the Supabase project URL and publishable key from the project's Connect dialog in ignored `.env.local`; these have been added for project `dshlkfieydhxpkffcrfo`. For local database tests, start the CLI stack and use `pnpm exec supabase status` to obtain the local API URL and publishable key instead.
+8. From the repository root, run:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Anon key |
-| `NEXT_PUBLIC_APP_URL` | Yes | App URL for OAuth redirectTo |
+   ```bash
+   pnpm exec supabase start
+   pnpm exec supabase db reset
+   pnpm exec supabase test db
+   pnpm dev
+   ```
 
----
+   Visit `http://localhost:3000/login`, complete Google sign-in, confirm `/dashboard` loads, then sign out and confirm the protected route redirects back to sign-in.
 
-## Future Authentication: Phone OTP
+The Auth0 tenant/client, Google connection, and deployed/attached Action are configured. The owner reports adding Auth0 under the hosted project's Supabase **Authentication → Third-Party Auth** settings. The Supabase CLI was authenticated and linked to project `dshlkfieydhxpkffcrfo`; the five repository migrations were applied successfully and the remote history confirms versions `20260101000000` through `20260101000004`. The project exposes the expected tables; an unauthenticated `ensure_current_profile` call is rejected with SQLSTATE `42501`. A real Auth0 session successfully provisioned an issuer-bound profile, and the owner confirmed sign-out works. All 22 SQL regression assertions passed using `supabase db query --linked --file`; rollback-only synthetic-claim smoke tests verified profile provisioning and the authenticated profile update path without leaving test rows. A disposable Auth0 user was used to verify first-login onboarding, profile edits, persisted values, and inline validation in the browser. The official `supabase test db --linked` runner remains unavailable without Docker/Podman. Expired- and wrong-audience-token rejection were not independently tested. None of these steps require enabling billing.
 
-**Extensibility plan (no MVP implementation):**
+### Auth0 tenant name and Management API scopes
 
-1. Enable Phone provider in Supabase Dashboard
-2. Configure SMS provider (Twilio via Supabase)
-3. Add `signInWithOtp({ phone })` flow in login UI
-4. Same `auth.users` → `profiles` trigger
-5. Optional: store verified phone in `profiles.phone`
-6. No schema migration required
+The Auth0 **application display name** is RallyNook. The tenant's technical name/domain (`dev-viqq4bj1e522n2ob.us.auth0.com`) is a separate identifier and is unchanged. The tenant URL slug itself cannot be renamed in place; using a different slug means creating a new tenant and migrating its applications, connections, Actions, and settings. Do not recreate this tenant just to change the product label.
 
-**UI pattern:** Tab or link on login page: "Continue with Google" | "Continue with Phone"
+Auth0 separately supports an editable tenant **friendly name**. To set it to `RallyNook`, use the tenant settings in the Dashboard or the [Management API tenant-settings endpoint](https://auth0.com/docs/api/management/v2/tenants/patch-settings) with the `update:tenant_settings` scope and body `{"friendly_name":"RallyNook"}`. This changes the friendly label, not the tenant URL. It has not been changed by the Auth0 application rename.
 
----
+An Auth0 custom domain can present a branded login URL, but it masks rather than renames the underlying tenant domain. Auth0's [custom-domain documentation](https://auth0.com/docs/customize/custom-domains) says a free custom domain requires a valid payment card on file for verification, though Auth0 says it will not charge the card. It is optional and is not configured for this project.
 
-## Future Authentication: Email OTP
+An Auth0 MCP error that requests `read:actions` is about the MCP's authorization to the **Auth0 Management API**, not this application's OIDC scopes or API permissions:
 
-**Extensibility plan:**
+- If the MCP uses managed sign-in, reconnect/reauthorize it with the required Management API scope. If the consent flow does not let you choose scopes, the MCP provider must request `read:actions`; creating or changing Actions additionally requires the appropriate `create:actions` and/or `update:actions` permissions.
+- If you operate the MCP's own Machine-to-Machine application, authorize only the required permissions under **Applications → [MCP application] → APIs → Auth0 Management API**. Do not add Management API scopes to RallyNook's Regular Web Application.
 
-1. Enable Email provider with OTP in Supabase
-2. Add magic link / OTP form
-3. Same profile trigger
-4. Consider linking Google and Email accounts (Supabase account linking)
+## Testing
 
----
-
-## Future MFA
-
-Supabase supports MFA (TOTP). Enable in Dashboard when needed:
-
-1. User enrolls TOTP after primary auth
-2. `auth.mfa` API challenges on sign-in
-3. No application schema changes
-
-Document revisit in [Decisions ADR-006](./18_DECISIONS.md).
-
----
-
-## Auth State in Application
-
-### Server-Side
-
-```typescript
-const supabase = await createClient();
-const { data: { user } } = await supabase.auth.getUser();
-// user is null for guest
-```
-
-Always use `getUser()` not `getSession()` on server — validates JWT with Supabase.
-
-### Client-Side
-
-Use sparingly. Prefer server-fetched auth state passed as props. For client hooks (future):
-
-```typescript
-// Only when needed for realtime client features
-const { data: { subscription } } = supabase.auth.onAuthStateChange(...)
-```
-
----
-
-## Error Handling
-
-| Error | User Message | Action |
-|-------|--------------|--------|
-| OAuth cancelled | "Sign in was cancelled" | Return to login |
-| OAuth failed | "Unable to sign in. Please try again." | Log error server-side |
-| Session expired | Redirect to login | Middleware handles |
-| Invalid return URL | Redirect to dashboard | Sanitize `next` param |
-
----
-
-## Security Considerations
-
-| Concern | Mitigation |
-|---------|------------|
-| Session hijacking | HttpOnly cookies, HTTPS, short JWT expiry |
-| CSRF on OAuth | Supabase handles OAuth state parameter |
-| Open redirect | Validate `next` param is relative path |
-| Token in URL | Supabase SSR avoids exposing tokens in client JS |
-| Account enumeration | Generic error messages on auth failures |
-
-Full security document: [Security](./08_SECURITY.md).
-
----
-
-## Testing Authentication
+Required tests include:
 
 | Test | Expected |
-|------|----------|
-| Google sign-in happy path | Session created, profile row exists |
-| Sign out | Session cleared, dashboard inaccessible |
-| Expired session refresh | Middleware refreshes, user stays logged in |
-| Protected route without auth | Redirect to /login with next param |
-| Login while authenticated | Redirect to dashboard |
-| Public event page without auth | Renders without redirect |
+|---|---|
+| OAuth callback success | Valid callback establishes an SDK-managed session |
+| Invalid state/nonce or callback | Rejected; no authenticated session |
+| Wrong issuer/audience, expired, malformed JWT | Supabase/data boundary rejects request |
+| Protected route without session | Redirect to login with safe `next` |
+| Unsafe return URL | Rejected or redirected to a local default |
+| Sign-out | Session cleared; protected route inaccessible |
+| First login and concurrent callback | Exactly one correctly bound profile |
+| Forged client role | No change to database authorization |
+| RLS/RPC caller mapping | Only the correct internal profile's authorized rows are accessible |
 
-See [Testing](./12_TESTING.md) for Playwright auth setup with stored session state.
+Use mocks for deterministic local CI; live Auth0 E2E is opt-in and requires explicitly configured credentials. Do not make basic build or unit tests depend on a hosted provider.
