@@ -323,7 +323,7 @@ export type Database = {
           capacity: number
           community_id: string
           created_at?: string
-          created_by: string
+          created_by?: string
           deleted_at?: string | null
           description?: string | null
           ends_at: string
@@ -424,6 +424,15 @@ export type Database = {
     }
     Functions: {
       auth_user_id: { Args: never; Returns: string }
+      create_community: {
+        Args: {
+          p_activity_type_id: string
+          p_description: string | null
+          p_name: string
+          p_slug: string
+        }
+        Returns: string
+      }
       current_profile_id: { Args: never; Returns: string }
       ensure_current_profile: { Args: never; Returns: string }
       is_community_admin: { Args: { p_community_id: string }; Returns: boolean }

@@ -241,6 +241,15 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'no_show');
 
 **Why it exists:** Groups events and members; future multi-community support.
 
+### `create_community(p_name TEXT, p_slug TEXT, p_description TEXT, p_activity_type_id UUID)`
+
+- Authenticated-only `SECURITY DEFINER` function; owner profile is resolved from the verified Supabase JWT, never accepted from client input.
+- Locks the caller's profile row before checking the one-active-community MVP limit so concurrent create requests cannot bypass it.
+- Inserts the community and creator's `admin` membership in one transaction.
+- Database uniqueness on active community slug remains authoritative. Authenticated clients cannot directly insert into `communities`; creation must use this function through the Server Action.
+- Super admins may create multiple communities, matching the platform role policy.
+- Database checks enforce name, slug, and description bounds for both RPC and direct RLS-authorized updates. Authenticated clients may update settings columns but cannot change `owner_id`.
+
 ---
 
 ### `community_members`
@@ -277,7 +286,7 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'no_show');
 |--------|------|-------------|-------------|
 | `id` | UUID | PK DEFAULT gen_random_uuid() | Primary key |
 | `community_id` | UUID | FK → communities(id) | Hosting community |
-| `created_by` | UUID | FK → profiles(id) | Creator |
+| `created_by` | UUID | FK → profiles(id), NOT NULL DEFAULT `current_profile_id()` | Trusted creator profile |
 | `activity_type_id` | UUID | FK → activity_types(id) | Sport tag |
 | `title` | TEXT | NOT NULL | Event title |
 | `description` | TEXT | NULL | Details |
@@ -295,6 +304,7 @@ CREATE TYPE attendance_status AS ENUM ('present', 'absent', 'no_show');
 
 - `ends_at > starts_at`
 - UNIQUE (`share_slug`) WHERE `deleted_at IS NULL`
+- Authenticated clients cannot set `created_by` or change `community_id`; event insert/update is limited to explicitly granted columns.
 
 **Indexes:**
 
@@ -438,7 +448,7 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 **Logic:**
 
 1. Verify event is `published`, not deleted, not in past
-2. Verify caller is community member (auto-add member on first join if MVP policy allows)
+2. Enroll the verified caller as a regular community member if not already enrolled
 3. Check for existing active participation — return error if exists
 4. `SELECT ... FOR UPDATE` on event row
 5. Count confirmed participants
@@ -447,6 +457,8 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 8. Return `{ status, waitlist_position }`
 
 **Returns:** JSON `{ "status": "confirmed" | "waitlisted", "waitlist_position": number | null }`
+
+Community enrollment and participant insertion occur in the same transaction. A failed join does not leave a membership behind.
 
 ### `leave_event(p_event_id UUID)`
 

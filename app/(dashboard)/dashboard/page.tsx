@@ -1,19 +1,29 @@
-export default function DashboardPage() {
-  return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <h2 className="text-display-lg text-foreground">Your dashboard</h2>
-        <p className="mt-2 max-w-2xl text-body-lg text-muted-foreground">
-          This placeholder dashboard is in place for the protected auth shell. Upcoming milestones will add community, event, and attendance management.
-        </p>
-      </div>
+import { redirect } from "next/navigation";
 
-      <a
-        href="/auth/logout"
-        className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground transition-colors hover:bg-muted/80"
-      >
-        Sign out
-      </a>
-    </section>
-  );
+import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
+import { getCurrentProfile } from "@/features/auth/queries";
+import { getCommunityForUser } from "@/features/communities/queries";
+
+export const instant = false;
+
+export default async function DashboardPage() {
+  const current = await getCurrentProfile();
+
+  if (!current) {
+    redirect("/auth/login?returnTo=%2Fdashboard");
+  }
+  if ("error" in current) {
+    return <ProfileResolutionError error={current.error} />;
+  }
+
+  const community = await getCommunityForUser(current.profile.id);
+  if ("error" in community) {
+    return (
+      <p role="alert" className="text-body-md text-destructive">
+        Your community could not be loaded. Please refresh and try again.
+      </p>
+    );
+  }
+
+  redirect(community.data ? "/community" : "/community/setup");
 }
