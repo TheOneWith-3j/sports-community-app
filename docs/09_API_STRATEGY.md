@@ -164,7 +164,7 @@ const { data, error } = await supabase.rpc('join_event', {
 });
 ```
 
-`joinEvent` validates the event UUID, resolves the trusted current profile, and calls `join_event`; PostgreSQL atomically enrolls first-time joiners in the community and assigns confirmed or waitlisted status. Duplicate, closed, and unavailable events return safe user-facing errors. The public event page displays the caller's own participation and refreshes after a successful join.
+`joinEvent` validates the event UUID, resolves the trusted current profile, requires completed onboarding, and calls `join_event`; PostgreSQL atomically enrolls first-time joiners in the community and assigns confirmed or waitlisted status. Duplicate, closed, and unavailable events return safe user-facing errors. The public event page displays the caller's own participation and refreshes after a successful join.
 
 Map Postgres exceptions to error codes:
 

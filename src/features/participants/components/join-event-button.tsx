@@ -15,6 +15,7 @@ type JoinEventButtonProps = {
   eventId: string;
   shareSlug: string;
   isAuthenticated: boolean;
+  onboardingRequired: boolean;
   participation: UserParticipation | null;
   participationError?: boolean;
 };
@@ -34,6 +35,7 @@ export function JoinEventButton({
   eventId,
   shareSlug,
   isAuthenticated,
+  onboardingRequired,
   participation,
   participationError = false,
 }: JoinEventButtonProps) {
@@ -76,6 +78,23 @@ export function JoinEventButton({
       <p role="alert" className="text-body-sm text-destructive">
         Your event participation could not be checked. Please refresh and try again.
       </p>
+    );
+  }
+
+  if (onboardingRequired) {
+    const returnTo = `/e/${shareSlug}`;
+    return (
+      <div className="space-y-2">
+        <a
+          href={`/onboarding?returnTo=${encodeURIComponent(returnTo)}`}
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-4 py-3 text-label font-medium text-slate-950 transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
+        >
+          Complete profile to join
+        </a>
+        <p className="text-body-sm text-muted-foreground">
+          Choose your community display name before joining.
+        </p>
+      </div>
     );
   }
 

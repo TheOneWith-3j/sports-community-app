@@ -56,6 +56,7 @@ export default async function PublicEventPage({
   }
 
   let isAuthenticated = false;
+  let onboardingRequired = false;
   let participation = null;
   let participationError = false;
 
@@ -65,14 +66,17 @@ export default async function PublicEventPage({
       participationError = true;
     } else if (current) {
       isAuthenticated = true;
-      const participationResult = await getUserParticipation(
-        result.data.id,
-        current.profile.id,
-      );
-      if ("error" in participationResult) {
-        participationError = true;
-      } else {
-        participation = participationResult.data;
+      onboardingRequired = !current.profile.onboarding_completed;
+      if (!onboardingRequired) {
+        const participationResult = await getUserParticipation(
+          result.data.id,
+          current.profile.id,
+        );
+        if ("error" in participationResult) {
+          participationError = true;
+        } else {
+          participation = participationResult.data;
+        }
       }
     }
   }
@@ -81,6 +85,7 @@ export default async function PublicEventPage({
     <EventHeader
       event={result.data}
       isAuthenticated={isAuthenticated}
+      onboardingRequired={onboardingRequired}
       participation={participation}
       participationError={participationError}
     />

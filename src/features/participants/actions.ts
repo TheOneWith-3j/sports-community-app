@@ -43,6 +43,15 @@ export async function joinEvent(input: unknown): Promise<ActionResult<JoinResult
       },
     };
   }
+  if (!current.profile.onboarding_completed) {
+    return {
+      success: false,
+      error: {
+        code: "FORBIDDEN",
+        message: "Complete your profile setup before joining this event.",
+      },
+    };
+  }
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.rpc("join_event", {

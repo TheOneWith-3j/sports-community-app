@@ -10,9 +10,14 @@ import type { ActionResult } from "@/types/actions";
 type ProfileFormProps = {
   profile: UserProfile;
   onboarding?: boolean;
+  returnTo?: string;
 };
 
-export function ProfileForm({ profile, onboarding = false }: ProfileFormProps) {
+export function ProfileForm({
+  profile,
+  onboarding = false,
+  returnTo = "/dashboard",
+}: ProfileFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ActionResult<UserProfile> | null>(null);
@@ -34,7 +39,7 @@ export function ProfileForm({ profile, onboarding = false }: ProfileFormProps) {
       setResult(actionResult);
 
       if (actionResult.success && onboarding) {
-        router.replace("/dashboard");
+        router.replace(returnTo);
         router.refresh();
       }
     });

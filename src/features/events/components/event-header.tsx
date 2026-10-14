@@ -7,6 +7,7 @@ import { formatEventDate } from "@/lib/utils/event";
 type EventHeaderProps = {
   event: EventWithCounts;
   isAuthenticated: boolean;
+  onboardingRequired: boolean;
   participation: UserParticipation | null;
   participationError?: boolean;
 };
@@ -14,6 +15,7 @@ type EventHeaderProps = {
 export function EventHeader({
   event,
   isAuthenticated,
+  onboardingRequired,
   participation,
   participationError,
 }: EventHeaderProps) {
@@ -65,6 +67,7 @@ export function EventHeader({
         eventId={event.id}
         shareSlug={event.share_slug}
         isAuthenticated={isAuthenticated}
+        onboardingRequired={onboardingRequired}
         participation={participation}
         participationError={participationError}
       />
