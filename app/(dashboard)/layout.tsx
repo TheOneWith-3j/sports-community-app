@@ -30,15 +30,23 @@ export default async function DashboardLayout({
       <header className="border-b border-border bg-card/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div>
-            <p className="text-overline uppercase text-muted-foreground">Dashboard</p>
+            <p className="text-overline uppercase text-muted-foreground">RallyNook</p>
             <h1 className="text-heading-md text-foreground">Community hub</h1>
           </div>
-          <Link
-            href="/dashboard/settings"
-            className="rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground transition-colors hover:bg-muted/80"
-          >
-            Profile settings
-          </Link>
+          <nav aria-label="Account navigation" className="flex items-center gap-2">
+            <Link
+              href="/community"
+              className="rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground transition-colors hover:bg-muted/80"
+            >
+              Community
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              className="rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground transition-colors hover:bg-muted/80"
+            >
+              Profile settings
+            </Link>
+          </nav>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>

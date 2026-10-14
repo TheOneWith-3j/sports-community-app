@@ -110,14 +110,16 @@ export const updateProfileSchema = z.object({
 
 ```typescript
 export const createCommunitySchema = z.object({
-  name: z.string().min(2).max(80).trim(),
-  slug: z.string().min(2).max(40).regex(/^[a-z0-9-]+$/),
-  description: z.string().max(500).optional(),
+  name: z.string().trim().min(2).max(80),
+  slug: z.string().trim().min(2).max(40).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  description: z.string().trim().max(500).optional().or(z.literal('')),
   activityTypeId: z.string().uuid(),
-});
+}).strict();
 ```
 
 **MVP constraint:** Reject if user already owns a community (unless super admin).
+
+`createCommunity` calls the authenticated `create_community` RPC so the one-community check, owner assignment, slug constraint, and creator-admin membership are atomic. Direct `communities` INSERT is revoked from client roles. `updateCommunity` uses the user-scoped Supabase client and is authorized by RLS plus an explicit admin check.
 
 ---
 
@@ -130,23 +132,7 @@ export const createCommunitySchema = z.object({
 | `publishEvent` | `{ eventId: uuid }` | `ActionResult<Event>` | M6 |
 | `cancelEvent` | `{ eventId: uuid }` | `ActionResult<Event>` | M6 |
 
-```typescript
-export const createEventSchema = z.object({
-  communityId: z.string().uuid(),
-  title: z.string().min(3).max(100).trim(),
-  description: z.string().max(2000).optional(),
-  startsAt: z.string().datetime(),
-  endsAt: z.string().datetime(),
-  capacity: z.number().int().min(1).max(500),
-  location: z.string().max(200).optional(),
-  activityTypeId: z.string().uuid(),
-}).refine(data => new Date(data.endsAt) > new Date(data.startsAt), {
-  message: 'End time must be after start time',
-  path: ['endsAt'],
-});
-```
-
-`createEvent` generates `share_slug` via nanoid (8 chars, URL-safe).
+`createEvent` validates future event times and field limits, verifies community-admin authorization, and relies on the database default for the trusted creator profile. It generates an eight-character URL-safe `share_slug` with Node's cryptographic random bytes. Event updates are restricted to not-yet-started draft or published events; only draft events can be published. All mutations use the user-scoped Supabase client and revalidate affected routes.
 
 ---
 
@@ -177,6 +163,8 @@ const { data, error } = await supabase.rpc('join_event', {
   p_event_id: eventId,
 });
 ```
+
+`joinEvent` validates the event UUID, resolves the trusted current profile, requires completed onboarding, and calls `join_event`; PostgreSQL atomically enrolls first-time joiners in the community and assigns confirmed or waitlisted status. Duplicate, closed, and unavailable events return safe user-facing errors. The public event page displays the caller's own participation and refreshes after a successful join.
 
 Map Postgres exceptions to error codes:
 
@@ -222,6 +210,7 @@ Queries live in `src/features/*/queries.ts`. Use React `cache()` for deduplicati
 | `getCommunityById(id)` | Community | M5 |
 | `getCommunityForUser(userId)` | Community \| null | M5 |
 | `getCommunityMembers(communityId)` | Member[] | M5 |
+| `getActivityTypes()` | ActivityType[] | M5 |
 
 ### Events
 
@@ -229,6 +218,7 @@ Queries live in `src/features/*/queries.ts`. Use React `cache()` for deduplicati
 |----------|---------|-----------|
 | `getEventBySlug(slug)` | EventWithCommunity | M7 |
 | `getEventById(id)` | Event | M6 |
+| `getEventsForCommunity(communityId)` | Event[] | M6 |
 | `getUpcomingEvents(communityId)` | Event[] | M13 |
 | `getEventWithCounts(eventId)` | Event + confirmed/waitlist counts | M7 |
 

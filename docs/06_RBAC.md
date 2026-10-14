@@ -128,7 +128,7 @@ flowchart TD
 |--------|-------|--------|-----------------|-------------|
 | View confirmed list | Yes (published event) | Yes | Yes | Yes |
 | View waitlist | No | Own position only | Yes (full list) | Yes |
-| Join event (FCFS) | No | Yes (community member) | Yes | Yes |
+| Join event (FCFS) | No | Yes; first join enrolls as a regular member | Yes | Yes |
 | Leave event | No | Own participation | Own + any | All |
 | Remove participant | No | No | Yes | Yes |
 
@@ -162,7 +162,7 @@ flowchart TD
 | Rule | Enforcement |
 |------|-------------|
 | Guest cannot join events | RPC requires a mapped `current_profile_id()`; UI shows sign-in prompt |
-| Member must belong to community to join event | RPC checks `is_community_member` |
+| First event join enrolls user in community | `join_event` atomically inserts a regular membership and participant row |
 | Cannot join draft/cancelled/completed events | RPC validates `events.status = 'published'` |
 | Cannot join past events | RPC validates `events.starts_at > now()` |
 | Cannot exceed capacity for confirmed | RPC transaction lock |
@@ -223,9 +223,8 @@ CREATE POLICY communities_select_member ON communities FOR SELECT
     )
   );
 
--- communities_insert_authenticated
-CREATE POLICY communities_insert_authenticated ON communities FOR INSERT
-  WITH CHECK (current_profile_id() IS NOT NULL AND owner_id = current_profile_id());
+-- Community inserts are revoked for authenticated clients; use create_community().
+-- Authenticated UPDATE is granted only on community settings columns; owner_id is immutable.
 
 -- communities_update_admin
 CREATE POLICY communities_update_admin ON communities FOR UPDATE
@@ -334,7 +333,7 @@ CREATE POLICY event_participants_select ON event_participants FOR SELECT
 -- No INSERT/UPDATE/DELETE policies for regular users
 ```
 
-RPC functions `join_event`, `leave_event`, `remove_participant` run as `SECURITY DEFINER` with internal authorization checks.
+RPC functions `create_community`, `join_event`, `leave_event`, and `remove_participant` run as `SECURITY DEFINER` with internal authorization checks. Authenticated users cannot directly insert community rows; `create_community` creates the community and creator's admin membership atomically.
 
 ### `attendance_records`
 

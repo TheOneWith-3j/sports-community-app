@@ -3,10 +3,19 @@ import { redirect } from "next/navigation";
 import { ProfileForm } from "@/features/auth/components/profile-form";
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
 import { getCurrentProfile } from "@/features/auth/queries";
+import { safeReturnTo } from "@/lib/auth/safe-return-to";
 
 export const instant = false;
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ returnTo?: string | string[] }>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const returnTo = safeReturnTo(
+    typeof params.returnTo === "string" ? params.returnTo : null,
+  );
   const result = await getCurrentProfile();
 
   if (!result) {
@@ -18,7 +27,7 @@ export default async function OnboardingPage() {
   }
 
   if (result.profile.onboarding_completed) {
-    redirect("/dashboard");
+    redirect(returnTo);
   }
 
   return (
@@ -35,7 +44,11 @@ export default async function OnboardingPage() {
             Choose the name your community will see before you continue.
           </p>
         </div>
-        <ProfileForm profile={result.profile} onboarding />
+        <ProfileForm
+          profile={result.profile}
+          onboarding
+          returnTo={returnTo}
+        />
       </section>
     </main>
   );

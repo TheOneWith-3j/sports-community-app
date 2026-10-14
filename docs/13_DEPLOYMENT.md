@@ -35,16 +35,16 @@ flowchart LR
 
 | Environment | Purpose |
 |-------------|---------|
-| Hosted | Owner-created Free project `dshlkfieydhxpkffcrfo`; Auth0 third-party JWT integration used in live verification; all five app migrations applied and recorded |
+| Hosted | Owner-created Free project `dshlkfieydhxpkffcrfo`; Auth0 third-party JWT integration used in live verification; all eight app migrations applied and recorded |
 | Local | `pnpm exec supabase start` for development when a compatible container runtime is available |
 
 ### Hosted project setup
 
-The project owner created the hosted Supabase project and supplied its URL and publishable key. They are stored in ignored `.env.local`; do not display or commit those values. All five migrations in `supabase/migrations/` have been applied to the linked project and verified in `supabase_migrations.schema_migrations`. The public table endpoints for `profiles`, `communities`, and `events` respond. A real Auth0 session provisioned an issuer-bound profile, and all 22 SQL regression assertions passed through `supabase db query --linked --file`. The official pgTAP runner remains unavailable without Docker/Podman.
+The project owner created the hosted Supabase project and supplied its URL and publishable key. They are stored in ignored `.env.local`; do not display or commit those values. All eight migrations in `supabase/migrations/` have been applied to the linked project; the latest version and activity-type seed rows were confirmed via the Supabase Management API. The public table endpoints for `profiles`, `communities`, and `events` respond. A real Auth0 session provisioned an issuer-bound profile, and all 41 identity, community, and event SQL regression assertions passed through `supabase db query --linked --file`. M6 lint, typecheck, production build, and authenticated event-screen browser checks pass. The official pgTAP runner remains unavailable without Docker/Podman.
 
 1. Confirm the project remains on Free; do not choose paid compute, add a paid add-on, or enable billing.
 2. The owner reports adding Auth0 under **Authentication → Third-Party Auth** using tenant `dev-viqq4bj1e522n2ob` and region `us`, matching `supabase/config.toml`. Supabase Auth must not be enabled as the app identity provider.
-3. The CLI is authenticated and linked. Migration history and `db push --dry-run` were checked; all five migrations were applied and their versions verified remotely.
+3. The CLI is authenticated and linked. Migration history and `db push --dry-run` were checked; all eight migrations were applied and the latest version was verified remotely.
 4. A real Auth0 sign-in has provisioned the profile from the ID token. The SQL regression assertions cover profile mapping and role/identity protections. Expired- and wrong-audience-token rejection have not been independently exercised.
 5. Never put the service-role key in browser code or user-triggered application paths. Do not use a service-role key as a substitute for the Supabase CLI access token or database password.
 

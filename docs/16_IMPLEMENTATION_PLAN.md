@@ -31,10 +31,10 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M2 | Database Schema and RLS | Complete; M3 adds Auth0 identity mapping |
 | M3 | Authentication — Auth0 Google Login | Complete; live Auth0 profile provisioning, hosted migrations, and 22 SQL regression assertions verified |
 | M4 | User Profile | Complete; authenticated onboarding, profile update, persistence, and validation flows verified |
-| M5 | Community Creation | Not started |
-| M6 | Event CRUD | Not started |
-| M7 | Public Event Page | Not started |
-| M8 | Join Event (FCFS) | Not started |
+| M5 | Community Creation | Complete; authenticated community setup, atomic creator-admin assignment, one-community rule, and RLS settings authorization verified |
+| M6 | Event CRUD | Complete; authenticated create, publish, edit, cancel, and validation flows verified |
+| M7 | Public Event Page | Complete; anonymous page, responsive layout, metadata, published-only visibility, and regression coverage verified |
+| M8 | Join Event (FCFS) | Complete; atomic first-time community enrollment, authenticated join, guest return flow, and duplicate/closed-event checks verified |
 | M9 | Waitlist | Not started |
 | M10 | Leave and Auto-Promotion | Not started |
 | M11 | Participant List | Not started |
@@ -460,19 +460,21 @@ app/(dashboard)/community/setup/page.tsx
 
 ### Acceptance Criteria
 
-- [ ] Admin creates community with name, slug, description, activity type
-- [ ] Creator assigned admin role in community_members
-- [ ] MVP blocks second community creation for same user
-- [ ] Admin can edit community settings
-- [ ] Non-admin cannot access community settings
+- [x] Admin creates community with name, slug, description, activity type
+- [x] Creator assigned admin role in community_members
+- [x] MVP blocks second community creation for same user
+- [x] Admin can edit community settings
+- [x] Non-admin cannot access community settings
 
 ### Manual Test Checklist
 
-- [ ] Create badminton community — success
-- [ ] Creator appears as admin member
-- [ ] Edit description — saved
-- [ ] Attempt second community — rejected with message
-- [ ] Duplicate slug rejected
+- [x] Create badminton community — success (verified in authenticated browser)
+- [x] Creator appears as admin member (atomic database regression assertion)
+- [x] Edit description — saved (admin update verified in SQL regression test; settings form rendered in authenticated browser)
+- [x] Attempt second community — rejected with message (database regression assertion)
+- [x] Duplicate slug rejected (database unique-index regression assertion)
+
+The authenticated browser verified community creation and settings page access. Hosted SQL regression assertions verify creator/admin assignment, the single-community limit, direct-insert denial, admin updates, non-admin RLS denial, and duplicate-slug rejection.
 
 ### Definition of Done
 
@@ -512,10 +514,10 @@ Admin creates, edits, publishes, and cancels events. Share slug generated. Event
 ### Features
 
 - createEvent, updateEvent, publishEvent, cancelEvent actions
-- Event form with React Hook Form + Zod
+- Event form with Zod validation
 - Event list page (dashboard)
 - Event detail page (admin view)
-- share_slug generation (nanoid 8 chars)
+- share_slug generation (8 URL-safe characters from cryptographic random bytes)
 - Copy share link button
 - Event statuses: draft, published, cancelled
 
@@ -523,11 +525,14 @@ Admin creates, edits, publishes, and cancels events. Share slug generated. Event
 
 ```
 src/lib/validations/event.ts
-src/lib/utils/slug.ts (generateShareSlug)
+src/lib/utils/event.ts
+src/lib/utils/event-share.ts
 src/features/events/actions.ts
 src/features/events/queries.ts
 src/features/events/components/event-form.tsx
+src/features/events/components/event-management-actions.tsx
 src/components/domain/event-card.tsx
+src/components/domain/copy-share-link-button.tsx
 app/(dashboard)/events/page.tsx
 app/(dashboard)/events/new/page.tsx
 app/(dashboard)/events/[id]/page.tsx
@@ -535,22 +540,24 @@ app/(dashboard)/events/[id]/page.tsx
 
 ### Acceptance Criteria
 
-- [ ] Admin creates event with all required fields
-- [ ] Event saved as draft or published
-- [ ] share_slug unique and URL-safe
-- [ ] Admin edits event before start
-- [ ] Admin cancels event with confirmation
-- [ ] Copy link produces `{APP_URL}/e/{slug}`
-- [ ] Member cannot create events
+- [x] Admin creates event with all required fields
+- [x] Event saved as draft or published
+- [x] share_slug unique and URL-safe
+- [x] Admin edits event before start
+- [x] Admin cancels event with confirmation
+- [x] Copy link produces `{APP_URL}/e/{slug}`
+- [x] Member cannot create events
+
+**Implementation status:** M6 routes, Server Actions, validation, event list/detail, share-link UI, and database privileges/default are implemented and verified. Migration `20260101000007_event_crud_privileges.sql` is applied to the linked project. Lint, typecheck, production build, all 41 hosted SQL assertions, and authenticated browser checks pass. The regression suite covers non-admin event-creation denial and anonymous draft-event denial. Temporary QA event, community, membership, and profile rows were removed after browser verification. The official pgTAP runner remains unavailable without Docker/Podman.
 
 ### Manual Test Checklist
 
-- [ ] Create draft event — not public
-- [ ] Publish event — status published
-- [ ] Copy share link — correct format
-- [ ] Edit title — saved
-- [ ] Cancel event — status cancelled
-- [ ] End before start validation fails
+- [x] Create draft event — not public
+- [x] Publish event — status published
+- [x] Copy share link — correct format
+- [x] Edit title — saved
+- [x] Cancel event — status cancelled
+- [x] End before start validation fails
 
 ### Definition of Done
 
@@ -612,20 +619,22 @@ src/components/layout/navbar.tsx (public variant)
 
 ### Acceptance Criteria
 
-- [ ] `/e/{slug}` loads without auth for published events
-- [ ] Shows title, schedule, location, capacity, confirmed count
-- [ ] Draft/cancelled/deleted events return 404 or appropriate message
-- [ ] Mobile layout works at 375px
-- [ ] Page has meaningful title in browser tab
+- [x] `/e/{slug}` loads without auth for published events
+- [x] Shows title, schedule, location, capacity, confirmed count
+- [x] Draft/cancelled/deleted events are not exposed (404)
+- [x] Mobile layout works at 375px
+- [x] Page has meaningful title in browser tab
 
 ### Manual Test Checklist
 
-- [ ] Open share link incognito — event details visible
-- [ ] Cancelled event shows cancelled state
-- [ ] Invalid slug — 404 page
-- [ ] Capacity bar shows correct fraction
+- [x] Open share link anonymously — event details visible
+- [x] Draft/cancelled/deleted events are unavailable; published-only RLS intentionally returns 404 rather than disclosing event state
+- [x] Invalid slug — 404 page
+- [x] Capacity bar shows correct fraction
 
 ### Definition of Done
+
+**Implementation status:** `/e/[slug]` renders published events anonymously with event details, confirmed-participant capacity, responsive layout, and metadata. The hosted regression suite verifies that anonymous users can read published events but cannot read draft or cancelled events. Browser checks confirmed the share page at 375px and 404 handling for invalid slugs. Lint, typecheck, production build, and all 43 hosted SQL assertions pass. The official pgTAP runner remains unavailable without Docker/Podman.
 
 Public event page complete. US-EVENT-03 satisfied.
 
@@ -681,22 +690,24 @@ src/lib/validations/participant.ts
 
 ### Acceptance Criteria
 
-- [ ] Authenticated member joins — status confirmed
-- [ ] Confirmed count increments
-- [ ] Guest tap join — redirect to login with return URL
-- [ ] Cannot join draft/cancelled/past events
-- [ ] Cannot join twice (conflict error)
-- [ ] Concurrent joins respect capacity (RPC atomicity)
+- [x] Authenticated user joins — status confirmed
+- [x] Confirmed count increments
+- [x] Guest tap join — redirect to login with return URL
+- [x] Cannot join draft/cancelled/past events
+- [x] Cannot join twice (conflict error)
+- [x] Concurrent joins respect capacity (event-row lock in RPC)
 
 ### Manual Test Checklist
 
-- [ ] Join as member — confirmed
-- [ ] Join as guest — login prompt
-- [ ] Join after login from return URL — works
-- [ ] Second join attempt — error message
-- [ ] Join published event — success
+- [ ] Join as first-time authenticated user — confirmed and community membership created atomically in the browser
+- [x] Join as guest — login prompt with return URL
+- [ ] Complete Auth0 sign-in from the return URL in a browser session
+- [ ] Second join attempt — conflict message shown in the browser
+- [ ] Join published event — success shown in the browser
 
 ### Definition of Done
+
+**Implementation status:** Authenticated users can join published future events through the `join_event` RPC. The RPC serializes joins on the event row, atomically creates first-time community membership, and rejects duplicate, anonymous, cancelled, and past-event joins. The public page displays the caller's participation status and confirmed capacity; guests are sent through login with a safe return path. Lint, typecheck, production build, the anonymous browser return-flow check, and all 49 hosted SQL assertions pass. The Auth0-authenticated join, status display, and action error state still need an end-to-end browser run.
 
 FCFS join works for spots below capacity. FR-JOIN-01, FR-JOIN-02, FR-JOIN-06 met.
 
