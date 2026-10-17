@@ -350,10 +350,9 @@ Reusable component specifications for RallyNook. All components follow [UI Syste
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `position` | `number?` | User's waitlist position |
-| `totalWaitlisted` | `number` | Total on waitlist |
-| `participants` | `Participant[]?` | Admin full list |
 | `variant` | `'user' \| 'admin'` | Display mode |
+| `position` | `number` | Required for the user variant |
+| `participants` | `WaitlistedParticipant[]` | Required for the admin variant |
 
 **User variant:**
 
@@ -363,8 +362,8 @@ Reusable component specifications for RallyNook. All components follow [UI Syste
 
 **Admin variant:**
 
-- Expandable list ordered by position
-- Same row format as ParticipantList
+- Ordered list with position, display name, and join date
+- The admin event page loads this list only after server-side community-admin authorization
 
 ---
 
