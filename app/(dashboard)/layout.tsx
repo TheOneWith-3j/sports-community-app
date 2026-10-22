@@ -7,6 +7,7 @@ import {
 } from "@/features/auth/queries";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const instant = false;
 
@@ -36,6 +37,7 @@ export default async function DashboardLayout({
             <h1 className="text-heading-md text-foreground">Community hub</h1>
           </div>
           <nav aria-label="Account navigation" className="flex items-center gap-2">
+            <ThemeToggle />
             <Link
               href="/community"
               className="rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground transition-colors hover:bg-muted/80"
