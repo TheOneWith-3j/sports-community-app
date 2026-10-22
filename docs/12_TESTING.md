@@ -185,7 +185,7 @@ export default defineConfig({
 | 3 | Sign out | Redirect to login |
 | 4 | Visit `/e/test-slug` | Public page loads without auth |
 
-**Note:** Use Supabase test user or Playwright mock OAuth in CI. Document test Google account in `.env.test` (not committed).
+**Note:** This project uses Auth0 with Google as the configured connection; it does not manage application passwords. For local authenticated E2E, complete the real Auth0 Google login once, save Playwright storage state to `tests/.auth/user.json`, and set `PLAYWRIGHT_STORAGE_STATE` in the ignored `.env.test`. Never commit credentials or storage state.
 
 #### 2. Join Event FCFS (`join-event.spec.ts`)
 
