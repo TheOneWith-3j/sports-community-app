@@ -14,7 +14,9 @@ import { eventShareSlugSchema } from "@/lib/validations/event";
 
 export const instant = false;
 
-type PublicEventPageProps = PageProps<"/e/[slug]">;
+type PublicEventPageProps = {
+  params: Promise<{ slug: string }>;
+};
 
 export async function generateMetadata({
   params,
