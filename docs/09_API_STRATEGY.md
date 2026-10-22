@@ -166,6 +166,8 @@ const { data, error } = await supabase.rpc('join_event', {
 
 `joinEvent` validates the event UUID, resolves the trusted current profile, requires completed onboarding, and calls `join_event`; PostgreSQL atomically enrolls first-time joiners in the community and assigns confirmed or waitlisted status. Duplicate, closed, and unavailable events return safe user-facing errors. The public event page displays the caller's own participation and refreshes after a successful join.
 
+`leaveEvent` validates the event UUID, resolves the trusted current profile, and calls `leave_event`; PostgreSQL cancels the caller's active participation in one transaction, promotes the first waitlisted participant when needed, and renumbers remaining waitlist positions. The action returns a safe conflict error when the caller is not actively joined and revalidates the public event page after success.
+
 Map Postgres exceptions to error codes:
 
 | Postgres / RPC signal | Code |
