@@ -76,6 +76,41 @@ export async function getEventsForCommunity(
   return { data };
 }
 
+export async function getUpcomingEventsWithCounts(
+  communityId: string,
+): Promise<EventQueryResult<EventWithCounts[]>> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select(
+      "id, community_id, created_by, activity_type_id, title, description, starts_at, ends_at, capacity, location, status, share_slug, created_at, updated_at",
+    )
+    .eq("community_id", communityId)
+    .eq("status", "published")
+    .is("deleted_at", null)
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(6);
+
+  if (error) {
+    console.error("[getUpcomingEventsWithCounts]", { code: error.code });
+    return { error: true };
+  }
+
+  const events = await Promise.all(
+    data.map(async (event) => {
+      const result = await includeConfirmedCount(supabase, event);
+      return result;
+    }),
+  );
+  if (events.some((result) => "error" in result)) {
+    return { error: true };
+  }
+  return {
+    data: events.flatMap((result) => ("data" in result && result.data ? [result.data] : [])),
+  };
+}
+
 export const getEventBySlug = cache(
   async (
     shareSlug: string,

@@ -2,9 +2,12 @@ import Link from "next/link";
 
 import type { Event } from "@/features/events/queries";
 import { formatEventDate } from "@/lib/utils/event";
+import { CopyShareLinkButton } from "@/components/domain/copy-share-link-button";
+import { getEventShareUrl } from "@/lib/utils/event-share";
 
 type EventCardProps = {
   event: Event;
+  confirmedCount?: number;
 };
 
 const statusLabel: Record<Event["status"], string> = {
@@ -14,7 +17,7 @@ const statusLabel: Record<Event["status"], string> = {
   completed: "Completed",
 };
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, confirmedCount }: EventCardProps) {
   return (
     <article
       className={`rounded-2xl border border-border bg-card p-5 ${
@@ -38,9 +41,18 @@ export function EventCard({ event }: EventCardProps) {
         </span>
       </div>
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-body-sm text-muted-foreground">
-        <span>Capacity: {event.capacity}</span>
+        <span>
+          Capacity: {confirmedCount === undefined ? "—" : `${confirmedCount}/${event.capacity}`}
+        </span>
         {event.location ? <span>{event.location}</span> : null}
       </div>
+      {event.status === "published" ? (
+        <div className="mt-4">
+          <CopyShareLinkButton
+            shareUrl={getEventShareUrl(event.share_slug, process.env.APP_BASE_URL)}
+          />
+        </div>
+      ) : null}
       {event.status === "cancelled" ? (
         <p className="mt-3 text-body-sm text-muted-foreground">
           This event has been cancelled.

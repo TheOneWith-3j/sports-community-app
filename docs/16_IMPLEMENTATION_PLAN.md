@@ -39,7 +39,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M10 | Leave and Auto-Promotion | Complete |
 | M11 | Participant List | Complete |
 | M12 | Attendance Management | Complete |
-| M13 | Admin Dashboard | Not started |
+| M13 | Admin Dashboard | Complete |
 | M14 | RBAC Hardening | Not started |
 | M15 | Dark Mode and Polish | Not started |
 | M16 | Testing Foundation | Not started |
@@ -1060,12 +1060,12 @@ app/(dashboard)/layout.tsx (updated with nav)
 
 ### Acceptance Criteria
 
-- [ ] Dashboard shows upcoming published events
-- [ ] Event cards show capacity and confirmed count
-- [ ] Create event accessible from dashboard
-- [ ] Copy link works from dashboard
-- [ ] Mobile bottom nav; desktop sidebar
-- [ ] Empty state for new admin with no events
+- [x] Dashboard shows upcoming published events
+- [x] Event cards show capacity and confirmed count
+- [x] Create event accessible from dashboard
+- [x] Copy link works from dashboard
+- [x] Mobile bottom nav; desktop sidebar
+- [x] Empty state for new admin with no events
 
 ### Manual Test Checklist
 
@@ -1077,6 +1077,11 @@ app/(dashboard)/layout.tsx (updated with nav)
 ### Definition of Done
 
 Admin dashboard complete. FR-ADMIN met.
+
+### Implementation Notes
+
+- The dashboard queries only upcoming published events for the signed-in user's community and includes confirmed counts.
+- Navigation uses a desktop sidebar and mobile bottom bar; event cards expose the existing copy-link interaction.
 
 ### Suggested Git Commit Message
 

@@ -5,6 +5,8 @@ import { ProfileResolutionError } from "@/features/auth/components/profile-resol
 import {
   getCurrentProfile,
 } from "@/features/auth/queries";
+import { Sidebar } from "@/components/layout/sidebar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 export const instant = false;
 
@@ -49,7 +51,11 @@ export default async function DashboardLayout({
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <div className="mx-auto flex max-w-7xl">
+        <Sidebar />
+        <main className="min-w-0 flex-1 px-4 py-8 pb-24 sm:px-6 lg:px-8">{children}</main>
+      </div>
+      <BottomNav />
     </div>
   );
 }
