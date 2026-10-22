@@ -43,7 +43,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M14 | RBAC Hardening | Complete |
 | M15 | Dark Mode and Polish | Complete |
 | M16 | Testing Foundation | Complete |
-| M17 | Deployment | Not started |
+| M17 | Deployment | CI complete; hosting pending approval |
 | M18 | MVP QA and Launch Prep | Not started |
 
 ---
