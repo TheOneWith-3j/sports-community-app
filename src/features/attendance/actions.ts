@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentProfile } from "@/features/auth/queries";
-import { canManageCommunity } from "@/features/communities/queries";
+import { requireCommunityAdmin } from "@/lib/auth/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   markAttendanceSchema,
@@ -75,11 +75,20 @@ export async function markAttendance(
       error: { code: "NOT_FOUND", message: "The event could not be found." },
     };
   }
-  const authorization = await canManageCommunity(event.community_id);
-  if ("error" in authorization || !authorization.data) {
+  const authorization = await requireCommunityAdmin(event.community_id);
+  if (!authorization.authorized) {
     return {
       success: false,
-      error: { code: "FORBIDDEN", message: "You cannot manage this event." },
+      error: {
+        code:
+          authorization.reason === "unavailable"
+            ? "INTERNAL_ERROR"
+            : "FORBIDDEN",
+        message:
+          authorization.reason === "unavailable"
+            ? "Event permissions could not be checked. Please try again."
+            : "You cannot manage this event.",
+      },
     };
   }
 

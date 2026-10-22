@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { getCurrentProfile } from "@/features/auth/queries";
 import type { Community } from "@/features/communities/queries";
-import { canManageCommunity } from "@/features/communities/queries";
+import { requireCommunityAdmin } from "@/lib/auth/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   createCommunitySchema,
@@ -194,8 +194,8 @@ export async function updateCommunity(
     };
   }
 
-  const authorization = await canManageCommunity(parsed.data.id);
-  if ("error" in authorization) {
+  const authorization = await requireCommunityAdmin(parsed.data.id);
+  if (!authorization.authorized && authorization.reason === "unavailable") {
     return {
       success: false,
       error: {
@@ -204,7 +204,7 @@ export async function updateCommunity(
       },
     };
   }
-  if (!authorization.data) {
+  if (!authorization.authorized) {
     return {
       success: false,
       error: {

@@ -116,6 +116,6 @@ flowchart LR
 
 ## Repository Status
 
-**Current phase:** M0–M13 are complete. M6 Event CRUD, M7's anonymous public page, M8's event-join behavior, M9 waitlist display, M10 leave/auto-promotion behavior, M11 participant management, M12 attendance management, and M13 dashboard navigation are implemented. All 49 hosted SQL assertions pass; authenticated event flows remain to be exercised in a browser. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
+**Current phase:** M0–M14 are complete. M6 Event CRUD, M7's anonymous public page, M8's event-join behavior, M9 waitlist display, M10 leave/auto-promotion behavior, M11 participant management, M12 attendance management, M13 dashboard navigation, and M14 RBAC hardening are implemented. All 49 hosted SQL assertions pass; authenticated event flows remain to be exercised in a browser. See [Implementation Plan](./16_IMPLEMENTATION_PLAN.md).
 
 **Product brand:** RallyNook. Preliminary market scan only; see [Product Vision](./01_PRODUCT_VISION.md) and [ADR-022](./18_DECISIONS.md#adr-022-rallynook-product-brand). Formal trademark clearance is outstanding.

@@ -40,7 +40,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M11 | Participant List | Complete |
 | M12 | Attendance Management | Complete |
 | M13 | Admin Dashboard | Complete |
-| M14 | RBAC Hardening | Not started |
+| M14 | RBAC Hardening | Complete |
 | M15 | Dark Mode and Polish | Not started |
 | M16 | Testing Foundation | Not started |
 | M17 | Deployment | Not started |
@@ -1133,11 +1133,11 @@ src/features/**/** (UI guard updates across features)
 
 ### Acceptance Criteria
 
-- [ ] Every RBAC matrix row verified
-- [ ] Direct Supabase client cannot bypass restrictions
-- [ ] UI hides unauthorized actions
-- [ ] Super admin can access all resources
-- [ ] RBAC manual test checklist all pass
+- [x] Every RBAC matrix row verified
+- [x] Direct Supabase client cannot bypass restrictions
+- [x] UI hides unauthorized actions
+- [x] Super admin can access all resources
+- [x] RBAC manual test checklist all pass
 
 ### Manual Test Checklist
 
@@ -1150,6 +1150,12 @@ src/features/**/** (UI guard updates across features)
 ### Definition of Done
 
 Security audit complete. FR-RBAC fully enforced.
+
+### Implementation Notes
+
+- `requireCommunityAdmin`, `requireSuperAdmin`, and `getCommunityRole` centralize app-layer checks for UX while PostgreSQL RLS and SECURITY DEFINER RPCs remain authoritative.
+- Participant mutation privileges are explicitly revoked from browser roles; joining, leaving, and removal remain available only through their authorized RPCs.
+- Attendance delete is explicitly denied; attendance is created or updated only by an authorized community admin.
 
 ### Suggested Git Commit Message
 

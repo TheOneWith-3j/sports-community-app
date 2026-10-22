@@ -395,16 +395,22 @@ CREATE POLICY audit_logs_insert_admin ON audit_logs FOR INSERT
 Use in Server Components and Server Actions for UX (not security):
 
 ```typescript
-// src/lib/auth/roles.ts (to be implemented in M3/M14)
-export async function requireCommunityAdmin(communityId: string): Promise<void>;
-export async function requireSuperAdmin(): Promise<void>;
-export async function getCommunityRole(communityId: string): Promise<'admin' | 'member' | null>;
+// src/lib/auth/roles.ts
+export async function requireCommunityAdmin(
+  communityId: string,
+): Promise<RoleCheckResult>;
+export async function requireSuperAdmin(): Promise<RoleCheckResult>;
+export async function getCommunityRole(
+  communityId: string,
+): Promise<"admin" | "member" | null>;
 ```
 
 Pattern:
 
 1. Server Action calls `requireCommunityAdmin` — fast fail with 403 UX message
 2. Supabase mutation still goes through RLS/RPC — authoritative enforcement
+
+`getCommunityRole` treats a verified super admin as an effective community admin for app-layer UI checks. None of these helpers grant access; database RLS and RPC authorization remain authoritative.
 
 ---
 

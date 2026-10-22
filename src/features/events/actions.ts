@@ -4,10 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentProfile } from "@/features/auth/queries";
-import {
-  canManageCommunity,
-  type CommunityQueryResult,
-} from "@/features/communities/queries";
+import { requireCommunityAdmin } from "@/lib/auth/roles";
 import type { Event } from "@/features/events/queries";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -64,9 +61,8 @@ function authenticationFailure(
 async function requireEventAdmin(
   communityId: string,
 ): Promise<ActionResult<never> | null> {
-  const permission: CommunityQueryResult<boolean> =
-    await canManageCommunity(communityId);
-  if ("error" in permission) {
+  const permission = await requireCommunityAdmin(communityId);
+  if (!permission.authorized && permission.reason === "unavailable") {
     return {
       success: false,
       error: {
@@ -75,7 +71,7 @@ async function requireEventAdmin(
       },
     };
   }
-  if (!permission.data) {
+  if (!permission.authorized) {
     return {
       success: false,
       error: {
