@@ -1,4 +1,4 @@
-import { getAuth0Client } from "@/lib/auth0";
+import { getAuth0Client, isAuth0Configured } from "@/lib/auth0";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/database";
 
@@ -32,6 +32,9 @@ export type CurrentProfileResult =
   | null;
 
 export async function getCurrentUser() {
+  if (!isAuth0Configured()) {
+    return null;
+  }
   const session = await getAuth0Client().getSession();
   return session?.user ?? null;
 }

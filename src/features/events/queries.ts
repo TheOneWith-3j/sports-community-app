@@ -1,6 +1,7 @@
 import { cache } from "react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isAppEnvConfigured } from "@/lib/env";
 import type { Tables } from "@/types/database";
 
 export type Event = Pick<
@@ -114,6 +115,9 @@ export async function getUpcomingEventsWithCounts(
 export async function getFeaturedPublicEvent(): Promise<
   EventQueryResult<EventWithCounts | null>
 > {
+  if (!isAppEnvConfigured()) {
+    return { data: null };
+  }
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("events")
