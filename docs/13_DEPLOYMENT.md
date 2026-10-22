@@ -104,11 +104,24 @@ seeded public event at
 and rendered the expected content. The production Auth0 login route returned the
 expected redirect response.
 
+Vercel Web Analytics is enabled and the application includes the official
+`@vercel/analytics/next` component. Vercel production request logs are available
+and a runtime error scan of the current deployment returned no errors. Vercel
+Speed Insights was not enabled because the CLI identified it as a paid feature;
+it is intentionally excluded under the $0 budget policy.
+
 This deployment does not by itself establish that Vercel Hobby is eligible for
 commercial use. Confirm the account and product eligibility before treating this
 as an approved production hosting plan. Auth0 callback, logout, and web-origin
 allowlists must contain the exact production URL before authenticated production
 flows can be verified.
+
+The GitHub repository is connected to GitHub Actions for CI through
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml), but it is not connected
+to Vercel Git Integration. The Vercel GitHub connection attempt failed because
+the Vercel account does not currently have authorization to access the repository.
+Until that authorization is granted in Vercel, deployments must be started with
+the authenticated CLI; no Vercel token has been added to GitHub Actions.
 
 Vercel Hobby is a candidate only for eligible personal, non-commercial use; its official fair-use restriction does not establish eligibility for this product. Netlify Free (300 credits) and Neon Free (scale-to-zero) are shortlisted for a small-traffic experiment only, not approved production services; their free limits do not provide a verified uptime guarantee. Check current eligibility, payment requirements, credit exhaustion, cold-start behavior, and runtime compatibility in the [Repository Audit](./19_REPOSITORY_AUDIT.md) before provisioning. Do not enable usage-based billing.
 
