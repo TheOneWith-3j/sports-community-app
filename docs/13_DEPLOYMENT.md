@@ -21,7 +21,7 @@ Run and test the Next.js application locally without paid services. Auth0 is the
 ```mermaid
 flowchart LR
   Dev[Local Dev] --> GitHub[GitHub Repo]
-  GitHub --> Host[TBD eligible Next.js host]
+  GitHub --> Host[Vercel Hobby - conditional eligibility]
   Host --> SupabaseDB[Supabase PostgreSQL - Free project for pilot]
   App --> Auth0[Auth0 identity]
   Local --> SupabaseLocal[Supabase Local CLI]
@@ -92,6 +92,23 @@ Create bucket `avatars`:
 ---
 
 ## Hosting evaluation
+
+### Current deployment evidence
+
+The application is deployed to the Vercel project `rallynook` at
+[`https://rallynook.vercel.app`](https://rallynook.vercel.app). The deployment was
+created with the authenticated Vercel CLI because GitHub automatic deployment
+could not be connected from the current Vercel account. The landing page and the
+seeded public event at
+[`/e/DmDemo01`](https://rallynook.vercel.app/e/DmDemo01) both returned HTTP 200
+and rendered the expected content. The production Auth0 login route returned the
+expected redirect response.
+
+This deployment does not by itself establish that Vercel Hobby is eligible for
+commercial use. Confirm the account and product eligibility before treating this
+as an approved production hosting plan. Auth0 callback, logout, and web-origin
+allowlists must contain the exact production URL before authenticated production
+flows can be verified.
 
 Vercel Hobby is a candidate only for eligible personal, non-commercial use; its official fair-use restriction does not establish eligibility for this product. Netlify Free (300 credits) and Neon Free (scale-to-zero) are shortlisted for a small-traffic experiment only, not approved production services; their free limits do not provide a verified uptime guarantee. Check current eligibility, payment requirements, credit exhaustion, cold-start behavior, and runtime compatibility in the [Repository Audit](./19_REPOSITORY_AUDIT.md) before provisioning. Do not enable usage-based billing.
 
