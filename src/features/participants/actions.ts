@@ -9,6 +9,8 @@ import {
   leaveEventSchema,
   joinEventResultSchema,
   joinEventSchema,
+  removeParticipantSchema,
+  removeParticipantResultSchema,
 } from "@/lib/validations/participant";
 import type { ActionResult } from "@/types/actions";
 
@@ -215,6 +217,89 @@ export async function leaveEvent(
     data: {
       cancelled: true,
       promotedProfileId: parsedResult.data.promoted_profile_id,
+    },
+  };
+}
+
+export async function removeParticipant(
+  input: unknown,
+): Promise<ActionResult<{ cancelled: true; promotedProfileId: string | null }>> {
+  const parsedInput = removeParticipantSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return {
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "This participant could not be removed. Refresh and try again.",
+      },
+    };
+  }
+
+  const current = await getCurrentProfile();
+  if (!current) {
+    return {
+      success: false,
+      error: { code: "UNAUTHORIZED", message: "Sign in to manage participants." },
+    };
+  }
+  if ("error" in current) {
+    return {
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Your profile could not be loaded. Please try again.",
+      },
+    };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("remove_participant", {
+    p_participant_id: parsedInput.data.participantId,
+  });
+  if (error) {
+    console.error("[removeParticipant]", {
+      code: error.code,
+      message: error.message,
+    });
+    if (error.code === "42501") {
+      return {
+        success: false,
+        error: { code: "FORBIDDEN", message: "You cannot manage this event." },
+      };
+    }
+    if (error.message.includes("Participant not found")) {
+      return {
+        success: false,
+        error: { code: "NOT_FOUND", message: "This participant is no longer active." },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "The participant could not be removed. Please try again.",
+      },
+    };
+  }
+
+  const result = removeParticipantResultSchema.safeParse(data);
+  if (!result.success) {
+    console.error("[removeParticipant] RPC returned an unexpected response.");
+    return {
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "The participant removal could not be confirmed.",
+      },
+    };
+  }
+  revalidatePath("/e/[slug]", "page");
+  revalidatePath("/events/[id]", "page");
+  return {
+    success: true,
+    data: {
+      cancelled: true,
+      promotedProfileId: result.data.promoted_profile_id,
     },
   };
 }

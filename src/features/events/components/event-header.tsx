@@ -1,6 +1,8 @@
 import { CapacityBar } from "@/features/events/components/capacity-bar";
 import type { EventWithCounts } from "@/features/events/queries";
 import { JoinEventButton } from "@/features/participants/components/join-event-button";
+import { ParticipantList } from "@/components/domain/participant-list";
+import type { ConfirmedParticipant } from "@/features/participants/queries";
 import type { UserParticipation } from "@/features/participants/queries";
 import { formatEventDate } from "@/lib/utils/event";
 
@@ -10,6 +12,7 @@ type EventHeaderProps = {
   onboardingRequired: boolean;
   participation: UserParticipation | null;
   participationError?: boolean;
+  participants: ConfirmedParticipant[];
 };
 
 export function EventHeader({
@@ -18,6 +21,7 @@ export function EventHeader({
   onboardingRequired,
   participation,
   participationError,
+  participants,
 }: EventHeaderProps) {
   return (
     <article className="space-y-8 rounded-2xl border border-border bg-card p-5 sm:p-8">
@@ -71,6 +75,7 @@ export function EventHeader({
         participation={participation}
         participationError={participationError}
       />
+      <ParticipantList participants={participants} />
     </article>
   );
 }

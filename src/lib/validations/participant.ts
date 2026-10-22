@@ -31,3 +31,18 @@ export const leaveEventResultSchema = z
 
 export type LeaveEventInput = z.infer<typeof leaveEventSchema>;
 export type LeaveEventResult = z.infer<typeof leaveEventResultSchema>;
+
+export const removeParticipantSchema = z
+  .object({
+    participantId: z.string().uuid(),
+  })
+  .strict();
+
+export type RemoveParticipantInput = z.infer<typeof removeParticipantSchema>;
+
+export const removeParticipantResultSchema = z
+  .object({
+    status: z.literal("cancelled"),
+    promoted_profile_id: z.string().uuid().nullable(),
+  })
+  .strict();

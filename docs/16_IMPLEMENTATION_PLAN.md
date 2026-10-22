@@ -37,8 +37,8 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M8 | Join Event (FCFS) | Complete; atomic first-time community enrollment, authenticated join, guest return flow, and duplicate/closed-event checks verified |
 | M9 | Waitlist | Complete |
 | M10 | Leave and Auto-Promotion | Complete |
-| M11 | Participant List | Not started |
-| M12 | Attendance Management | Not started |
+| M11 | Participant List | Complete |
+| M12 | Attendance Management | Complete |
 | M13 | Admin Dashboard | Not started |
 | M14 | RBAC Hardening | Not started |
 | M15 | Dark Mode and Polish | Not started |
@@ -911,12 +911,12 @@ app/(dashboard)/events/[id]/page.tsx (admin participant management)
 
 ### Acceptance Criteria
 
-- [ ] Public event page shows confirmed participants
-- [ ] List ordered by joined_at ASC
-- [ ] Avatar and display name shown
-- [ ] Admin removes participant — confirmation + promotion if confirmed
-- [ ] Member cannot remove others
-- [ ] Empty state when no participants
+- [x] Public event page shows confirmed participants
+- [x] List ordered by joined_at ASC
+- [x] Avatar and display name shown
+- [x] Admin removes participant — confirmation + promotion if confirmed
+- [x] Member cannot remove others
+- [x] Empty state when no participants
 
 ### Manual Test Checklist
 
@@ -928,6 +928,11 @@ app/(dashboard)/events/[id]/page.tsx (admin participant management)
 ### Definition of Done
 
 Participant list and admin removal complete. FR-PARTICIPANTS met.
+
+### Implementation Notes
+
+- Public and admin participant lists read only confirmed records and order by `joined_at`.
+- Admin removal calls the existing authorization-enforcing `remove_participant` RPC, which promotes waitlisted users when a confirmed participant is removed.
 
 ### Suggested Git Commit Message
 
@@ -981,11 +986,11 @@ app/(dashboard)/events/[id]/attendance/page.tsx
 
 ### Acceptance Criteria
 
-- [ ] Admin marks individual attendance status
-- [ ] Only confirmed participants appear
-- [ ] Summary shows present/absent/no-show/unmarked counts
-- [ ] Member cannot mark attendance
-- [ ] Updates persist and survive refresh
+- [x] Admin marks individual attendance status
+- [x] Only confirmed participants appear
+- [x] Summary shows present/absent/no-show/unmarked counts
+- [x] Member cannot mark attendance
+- [x] Updates persist and survive refresh
 
 ### Manual Test Checklist
 
@@ -996,6 +1001,11 @@ app/(dashboard)/events/[id]/attendance/page.tsx
 ### Definition of Done
 
 Attendance module complete. FR-ATTENDANCE met.
+
+### Implementation Notes
+
+- The attendance route performs server-side community-admin authorization before loading participants.
+- Attendance writes use an upsert keyed by the existing unique `participant_id` constraint; RLS and explicit column privileges protect the write.
 
 ### Suggested Git Commit Message
 
