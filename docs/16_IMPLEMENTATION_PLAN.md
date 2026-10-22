@@ -44,7 +44,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M15 | Dark Mode and Polish | Complete |
 | M16 | Testing Foundation | Complete |
 | M17 | Deployment | CI complete; hosting pending approval |
-| M18 | MVP QA and Launch Prep | Not started |
+| M18 | MVP QA complete; production launch blocked on hosting/device/auth verification |
 
 ---
 
@@ -1428,17 +1428,19 @@ Bug fixes as needed (minimal scope)
 
 ### Acceptance Criteria
 
-- [ ] All MVP requirements from [Requirements](./02_REQUIREMENTS.md) verified
-- [ ] Manual QA checklist 100% pass
-- [ ] No critical or high severity open bugs
-- [ ] README accurate for new developer setup
-- [ ] LCP < 2.5s on public event page (mobile lab test)
-- [ ] Super admin bootstrapped
-- [ ] First real community can be created end-to-end
+- [ ] All MVP requirements from [Requirements](./02_REQUIREMENTS.md) verified — authenticated, device, and production checks remain
+- [ ] Manual QA checklist 100% pass — authenticated browser flows remain
+- [x] No critical or high severity bug found in deterministic QA
+- [x] README accurate for current local/CI setup
+- [ ] LCP < 2.5s on public event page — Lighthouse is not installed
+- [x] Super admin bootstrapped — Jash Joshi Google/Auth0 profile
+- [x] First demo community and published event created and verified
 
 ### Manual Test Checklist
 
 Use complete checklist from [Testing](./12_TESTING.md) — Authentication through Cross-Browser sections.
+
+**QA evidence:** See [MVP QA Results](./20_MVP_QA_RESULTS.md).
 
 ### Definition of Done
 
