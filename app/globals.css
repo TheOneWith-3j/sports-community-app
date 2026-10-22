@@ -23,6 +23,29 @@
   --info: #60a5fa;
 }
 
+.light {
+  --background: #fafafa;
+  --foreground: #0a0a0b;
+  --card: #ffffff;
+  --card-foreground: #0a0a0b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #0d9488;
+  --brand-primary: #0d9488;
+  --brand-secondary: #059669;
+  --brand-gradient-from: #0d9488;
+  --brand-gradient-to: #0891b2;
+  --success: #059669;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --info: #2563eb;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -50,11 +73,35 @@ html {
   color-scheme: dark;
 }
 
+html.light {
+  color-scheme: light;
+}
+
 body {
   min-height: 100vh;
   background: radial-gradient(circle at top, rgba(45, 212, 191, 0.12), transparent 35%), var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+html.light body {
+  background: radial-gradient(circle at top, rgba(13, 148, 136, 0.1), transparent 35%), var(--background);
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 * {

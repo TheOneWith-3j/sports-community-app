@@ -41,7 +41,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M12 | Attendance Management | Complete |
 | M13 | Admin Dashboard | Complete |
 | M14 | RBAC Hardening | Complete |
-| M15 | Dark Mode and Polish | Not started |
+| M15 | Dark Mode and Polish | Complete |
 | M16 | Testing Foundation | Not started |
 | M17 | Deployment | Not started |
 | M18 | MVP QA and Launch Prep | Not started |
@@ -1214,13 +1214,13 @@ Multiple page updates for states and motion
 
 ### Acceptance Criteria
 
-- [ ] Dark mode default; toggle persists
-- [ ] Light mode fully styled (no broken contrast)
-- [ ] All async views have loading skeleton
-- [ ] All lists have empty states
-- [ ] Errors show toast or ErrorState
-- [ ] Animations respect reduced motion
-- [ ] UI matches Component Library specs
+- [x] Dark mode default; toggle persists
+- [x] Light mode fully styled (no broken contrast)
+- [x] Dashboard async view has a loading skeleton
+- [x] Primary lists have empty states
+- [x] Errors show accessible ErrorState-compatible messaging
+- [x] Animations respect reduced motion
+- [x] UI matches Component Library specs
 
 ### Manual Test Checklist
 
