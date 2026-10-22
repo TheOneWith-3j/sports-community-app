@@ -9,4 +9,10 @@ const envSchema = z.object({
 
 export type AppEnv = z.infer<typeof envSchema>;
 
-export const env: AppEnv = envSchema.parse(process.env);
+export function isAppEnvConfigured(): boolean {
+  return envSchema.safeParse(process.env).success;
+}
+
+export function getAppEnv(): AppEnv {
+  return envSchema.parse(process.env);
+}

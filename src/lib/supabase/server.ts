@@ -1,10 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { getAuth0Client, isAuth0Configured } from "@/lib/auth0";
-import { env } from "@/lib/env";
+import { getAppEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
 export async function createServerSupabaseClient() {
+  const env = getAppEnv();
   const session = isAuth0Configured()
     ? await getAuth0Client().getSession()
     : null;

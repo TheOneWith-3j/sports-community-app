@@ -1,6 +1,7 @@
 import { cache } from "react";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isAppEnvConfigured } from "@/lib/env";
 import type { Tables } from "@/types/database";
 
 export type Event = Pick<
@@ -109,6 +110,33 @@ export async function getUpcomingEventsWithCounts(
   return {
     data: events.flatMap((result) => ("data" in result && result.data ? [result.data] : [])),
   };
+}
+
+export async function getFeaturedPublicEvent(): Promise<
+  EventQueryResult<EventWithCounts | null>
+> {
+  if (!isAppEnvConfigured()) {
+    return { data: null };
+  }
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select(
+      "id, community_id, created_by, activity_type_id, title, description, starts_at, ends_at, capacity, location, status, share_slug, created_at, updated_at",
+    )
+    .eq("status", "published")
+    .is("deleted_at", null)
+    .gte("starts_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getFeaturedPublicEvent]", { code: error.code });
+    return { error: true };
+  }
+
+  return includeConfirmedCount(supabase, data);
 }
 
 export const getEventBySlug = cache(
