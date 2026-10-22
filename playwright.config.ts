@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config as loadDotenv } from "dotenv";
+
+loadDotenv({ path: ".env.test" });
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -8,6 +11,7 @@ export default defineConfig({
   reporter: "html",
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
+    storageState: process.env.PLAYWRIGHT_STORAGE_STATE,
     trace: "on-first-retry",
   },
   projects: [
