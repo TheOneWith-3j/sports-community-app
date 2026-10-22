@@ -218,7 +218,7 @@ flowchart TD
 
 ## CI/CD Pipeline (M17)
 
-Create `.github/workflows/ci.yml`:
+The repository includes `.github/workflows/ci.yml`. It runs on pull requests and pushes to `main` without requiring hosted credentials:
 
 ```yaml
 name: CI
@@ -266,7 +266,7 @@ jobs:
       - run: pnpm e2e
 ```
 
-E2E must use deterministic auth/database mocks by default and need no cloud credentials. Do not add paid runners or secrets-dependent provider smoke tests as a required check.
+The quality job runs lint, strict type-checking, unit tests, and a production build. The browser job installs Chromium and runs the configured Playwright suite; authenticated tests remain skipped unless local test credentials and seeded URLs are supplied. Do not add paid runners or secrets-dependent provider smoke tests as a required check.
 
 ---
 
@@ -344,5 +344,5 @@ If free limits no longer fit, stop and document the limitation; a paid upgrade r
 | Milestone | Deliverable |
 |-----------|-------------|
 | M1 | Local Supabase project + env.local |
-| M17 | Approved free-tier deployment + CI |
+| M17 | CI is implemented; approved free-tier deployment remains pending provider eligibility and recovery review |
 | M18 | Production launch checklist |
