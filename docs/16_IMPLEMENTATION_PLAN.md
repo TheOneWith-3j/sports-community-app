@@ -36,7 +36,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M7 | Public Event Page | Complete; anonymous page, responsive layout, metadata, published-only visibility, and regression coverage verified |
 | M8 | Join Event (FCFS) | Complete; atomic first-time community enrollment, authenticated join, guest return flow, and duplicate/closed-event checks verified |
 | M9 | Waitlist | Complete |
-| M10 | Leave and Auto-Promotion | Not started |
+| M10 | Leave and Auto-Promotion | Complete |
 | M11 | Participant List | Not started |
 | M12 | Attendance Management | Not started |
 | M13 | Admin Dashboard | Not started |
@@ -834,12 +834,12 @@ app/(public)/e/[slug]/page.tsx (leave button when joined)
 
 ### Acceptance Criteria
 
-- [ ] User leaves — status cancelled
-- [ ] Confirmed user leaves — first waitlisted promoted to confirmed
-- [ ] Promoted user's waitlist position cleared
-- [ ] Remaining waitlist positions contiguous
-- [ ] Leave requires confirmation
-- [ ] Cannot leave if not joined
+- [x] User leaves — status cancelled
+- [x] Confirmed user leaves — first waitlisted promoted to confirmed
+- [x] Promoted user's waitlist position cleared
+- [x] Remaining waitlist positions contiguous
+- [x] Leave requires confirmation
+- [x] Cannot leave if not joined
 
 ### Manual Test Checklist
 
@@ -852,6 +852,12 @@ app/(public)/e/[slug]/page.tsx (leave button when joined)
 ### Definition of Done
 
 Auto-promotion works synchronously. FR-JOIN-04, FR-WAITLIST-02, FR-WAITLIST-03 met.
+
+### Implementation Notes
+
+- The `leave_event` RPC serializes against the event row, cancels the caller's active participation, promotes the first waitlisted participant when a confirmed spot opens, and renumbers remaining waitlist positions.
+- The server action validates the RPC response and revalidates the public event page after a successful leave.
+- Leaving is protected by an explicit confirmation dialog; users who are not actively joined receive a safe conflict error.
 
 ### Suggested Git Commit Message
 

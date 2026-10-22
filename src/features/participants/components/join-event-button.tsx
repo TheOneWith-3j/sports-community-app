@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { WaitlistCard } from "@/components/domain/waitlist-card";
+import { LeaveEventButton } from "@/features/participants/components/leave-event-button";
 import {
   joinEvent,
   type JoinResult,
@@ -60,15 +61,26 @@ export function JoinEventButton({
       participation.status === "waitlisted" &&
       typeof participation.waitlist_position === "number"
     ) {
-      return <WaitlistCard variant="user" position={participation.waitlist_position} />;
+      return (
+        <div className="space-y-3">
+          <WaitlistCard
+            variant="user"
+            position={participation.waitlist_position}
+          />
+          <LeaveEventButton eventId={eventId} />
+        </div>
+      );
     }
     return (
-      <p role="status" className="text-body-md text-foreground">
-        {participationMessage({
-          status: participation.status,
-          waitlistPosition: participation.waitlist_position,
-        })}
-      </p>
+      <div className="space-y-3">
+        <p role="status" className="text-body-md text-foreground">
+          {participationMessage({
+            status: participation.status,
+            waitlistPosition: participation.waitlist_position,
+          })}
+        </p>
+        <LeaveEventButton eventId={eventId} />
+      </div>
     );
   }
 

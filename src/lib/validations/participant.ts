@@ -15,3 +15,19 @@ export const joinEventResultSchema = z
 
 export type JoinEventInput = z.infer<typeof joinEventSchema>;
 export type JoinEventResult = z.infer<typeof joinEventResultSchema>;
+
+export const leaveEventSchema = z
+  .object({
+    eventId: z.string().uuid(),
+  })
+  .strict();
+
+export const leaveEventResultSchema = z
+  .object({
+    status: z.literal("cancelled"),
+    promoted_profile_id: z.string().uuid().nullable(),
+  })
+  .strict();
+
+export type LeaveEventInput = z.infer<typeof leaveEventSchema>;
+export type LeaveEventResult = z.infer<typeof leaveEventResultSchema>;
