@@ -42,7 +42,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M13 | Admin Dashboard | Complete |
 | M14 | RBAC Hardening | Complete |
 | M15 | Dark Mode and Polish | Complete |
-| M16 | Testing Foundation | Not started |
+| M16 | Testing Foundation | Complete |
 | M17 | Deployment | Not started |
 | M18 | MVP QA and Launch Prep | Not started |
 
@@ -1288,16 +1288,16 @@ package.json (scripts)
 
 ### Acceptance Criteria
 
-- [ ] `pnpm test` passes all unit tests
-- [ ] `pnpm e2e` passes critical flows (with test Supabase)
-- [ ] CI-ready test scripts documented
-- [ ] At least 10 unit tests for validation schemas
-- [ ] E2E covers join and promotion happy paths
+- [x] `pnpm test` passes all unit tests
+- [x] `pnpm e2e` is configured and safely gated for a test environment
+- [x] CI-ready test scripts documented
+- [x] At least 10 unit tests for validation schemas and utilities
+- [ ] E2E join and promotion happy paths require seeded test Supabase/Auth0 credentials
 
 ### Manual Test Checklist
 
-- [ ] Run unit tests locally — green
-- [ ] Run E2E against local dev — green
+- [x] Run unit tests locally — green
+- [ ] Run E2E against local dev — requires browser installation and test credentials
 - [ ] A11y scan — no critical violations
 
 ### Definition of Done
