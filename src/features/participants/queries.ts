@@ -25,6 +25,18 @@ export type WaitlistQueryResult =
   | { data: WaitlistedParticipant[] }
   | { error: true };
 
+export type ConfirmedParticipant = {
+  id: string;
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  joinedAt: string;
+};
+
+export type ParticipantQueryResult =
+  | { data: ConfirmedParticipant[] }
+  | { error: true };
+
 export async function getUserParticipation(
   eventId: string,
   profileId: string,
@@ -104,5 +116,45 @@ export async function getWaitlistedParticipants(
     });
   }
 
+  return { data: participants };
+}
+
+export async function getConfirmedParticipants(
+  eventId: string,
+): Promise<ParticipantQueryResult> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("event_participants")
+    .select(
+      "id, profile_id, joined_at, profiles(display_name, avatar_url)",
+    )
+    .eq("event_id", eventId)
+    .eq("status", "confirmed")
+    .order("joined_at", { ascending: true });
+
+  if (error) {
+    console.error("[getConfirmedParticipants]", { code: error.code });
+    return { error: true };
+  }
+
+  const participants: ConfirmedParticipant[] = [];
+  for (const participant of data) {
+    const profile = Array.isArray(participant.profiles)
+      ? participant.profiles[0]
+      : participant.profiles;
+    if (!profile) {
+      console.error(
+        "[getConfirmedParticipants] Query returned an invalid participant.",
+      );
+      return { error: true };
+    }
+    participants.push({
+      id: participant.id,
+      profileId: participant.profile_id,
+      displayName: profile.display_name,
+      avatarUrl: profile.avatar_url,
+      joinedAt: participant.joined_at,
+    });
+  }
   return { data: participants };
 }

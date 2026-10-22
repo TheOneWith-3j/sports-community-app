@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { getCurrentProfile } from "@/features/auth/queries";
 import { EventHeader } from "@/features/events/components/event-header";
 import { getEventBySlug } from "@/features/events/queries";
-import { getUserParticipation } from "@/features/participants/queries";
+import {
+  type ConfirmedParticipant,
+  getConfirmedParticipants,
+  getUserParticipation,
+} from "@/features/participants/queries";
 import { isAuth0Configured } from "@/lib/auth0";
 import { eventShareSlugSchema } from "@/lib/validations/event";
 
@@ -59,6 +63,11 @@ export default async function PublicEventPage({
   let onboardingRequired = false;
   let participation = null;
   let participationError = false;
+  let participants: ConfirmedParticipant[] = [];
+  const participantsResult = await getConfirmedParticipants(result.data.id);
+  if (!("error" in participantsResult)) {
+    participants = participantsResult.data;
+  }
 
   if (isAuth0Configured()) {
     const current = await getCurrentProfile();
@@ -88,6 +97,7 @@ export default async function PublicEventPage({
       onboardingRequired={onboardingRequired}
       participation={participation}
       participationError={participationError}
+      participants={participants}
     />
   );
 }

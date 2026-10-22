@@ -182,7 +182,7 @@ Map Postgres exceptions to error codes:
 
 | Action | Input Schema | Output | Milestone |
 |--------|--------------|--------|-----------|
-| `markAttendance` | `markAttendanceSchema` | `ActionResult<AttendanceRecord>` | M12 |
+| `markAttendance` | `markAttendanceSchema` | `ActionResult<{ status: AttendanceStatus }>` | M12 |
 | `bulkMarkAttendance` | `bulkMarkAttendanceSchema` | `ActionResult<{ updated: number }>` | M12 |
 
 ```typescript

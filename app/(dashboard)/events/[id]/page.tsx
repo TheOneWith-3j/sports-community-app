@@ -8,7 +8,9 @@ import { EventForm } from "@/features/events/components/event-form";
 import { EventManagementActions } from "@/features/events/components/event-management-actions";
 import { getEventById } from "@/features/events/queries";
 import { getWaitlistedParticipants } from "@/features/participants/queries";
+import { getConfirmedParticipants } from "@/features/participants/queries";
 import { WaitlistCard } from "@/components/domain/waitlist-card";
+import { ParticipantList } from "@/components/domain/participant-list";
 import {
   canManageCommunity,
   getActivityType,
@@ -92,6 +94,14 @@ export default async function EventDetailsPage({
       </p>
     );
   }
+  const participants = await getConfirmedParticipants(result.data.id);
+  if ("error" in participants) {
+    return (
+      <p role="alert" className="text-body-md text-destructive">
+        The participant list could not be loaded. Please refresh and try again.
+      </p>
+    );
+  }
 
   return (
     <section className="mx-auto max-w-3xl space-y-6">
@@ -147,6 +157,16 @@ export default async function EventDetailsPage({
         event={{ id: result.data.id, status: result.data.status }}
       />
 
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href={`/events/${result.data.id}/attendance`}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground hover:bg-muted/80"
+        >
+          Manage attendance
+        </Link>
+      </div>
+
+      <ParticipantList participants={participants.data} adminActions />
       <WaitlistCard variant="admin" participants={waitlist.data} />
 
       {eventCanBeEdited ? (
