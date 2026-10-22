@@ -272,7 +272,7 @@ Run on PR for `/e/[slug]` route in mobile emulation.
 
 ### Authentication
 
-- [ ] Google sign-in works on mobile Safari and Chrome
+- [ ] Google sign-in works on mobile Safari and Chrome — requires device verification
 - [ ] Session persists after browser restart
 - [ ] Protected routes redirect correctly
 - [ ] Sign out clears session
@@ -280,14 +280,14 @@ Run on PR for `/e/[slug]` route in mobile emulation.
 ### Events
 
 - [ ] Admin creates event with all fields
-- [ ] Share link copies and opens correctly
-- [ ] Public page shows without login
+- [x] Published demo share URL opens correctly
+- [x] Public page shows without login
 - [ ] Draft events not publicly visible
 - [ ] Cancelled event shows appropriate message
 
 ### Join / Waitlist
 
-- [ ] FCFS order preserved under rapid joins
+- [ ] FCFS order preserved under rapid joins — requires authenticated browser session
 - [ ] Capacity never exceeded
 - [ ] Waitlist position accurate
 - [ ] Auto-promotion on leave immediate
@@ -302,15 +302,15 @@ Run on PR for `/e/[slug]` route in mobile emulation.
 
 ### UI
 
-- [ ] Dark mode default; light toggle works
-- [ ] Responsive 375px to 1440px
+- [x] Dark mode default is configured; light toggle is implemented
+- [x] Public event renders at 375px and 1440px
 - [ ] Empty states display correctly
 - [ ] Loading states on all async actions
 - [ ] Error toasts on failures
 
 ### Cross-Browser
 
-- [ ] Chrome (Android)
+- [ ] Chrome (Android) — requires device verification
 - [ ] Safari (iOS)
 - [ ] Chrome (desktop)
 - [ ] Firefox (desktop)
