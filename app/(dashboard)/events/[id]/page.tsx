@@ -7,6 +7,8 @@ import { getCurrentProfile } from "@/features/auth/queries";
 import { EventForm } from "@/features/events/components/event-form";
 import { EventManagementActions } from "@/features/events/components/event-management-actions";
 import { getEventById } from "@/features/events/queries";
+import { getWaitlistedParticipants } from "@/features/participants/queries";
+import { WaitlistCard } from "@/components/domain/waitlist-card";
 import {
   canManageCommunity,
   getActivityType,
@@ -82,6 +84,14 @@ export default async function EventDetailsPage({
   const eventCanBeEdited =
     new Date(result.data.starts_at) > new Date() &&
     ["draft", "published"].includes(result.data.status);
+  const waitlist = await getWaitlistedParticipants(result.data.id);
+  if ("error" in waitlist) {
+    return (
+      <p role="alert" className="text-body-md text-destructive">
+        The event waitlist could not be loaded. Please refresh and try again.
+      </p>
+    );
+  }
 
   return (
     <section className="mx-auto max-w-3xl space-y-6">
@@ -136,6 +146,8 @@ export default async function EventDetailsPage({
       <EventManagementActions
         event={{ id: result.data.id, status: result.data.status }}
       />
+
+      <WaitlistCard variant="admin" participants={waitlist.data} />
 
       {eventCanBeEdited ? (
         <div className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8">

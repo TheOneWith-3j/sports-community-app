@@ -35,7 +35,7 @@ Milestone-driven implementation plan from empty repository to MVP launch. Each m
 | M6 | Event CRUD | Complete; authenticated create, publish, edit, cancel, and validation flows verified |
 | M7 | Public Event Page | Complete; anonymous page, responsive layout, metadata, published-only visibility, and regression coverage verified |
 | M8 | Join Event (FCFS) | Complete; atomic first-time community enrollment, authenticated join, guest return flow, and duplicate/closed-event checks verified |
-| M9 | Waitlist | Not started |
+| M9 | Waitlist | Complete |
 | M10 | Leave and Auto-Promotion | Not started |
 | M11 | Participant List | Not started |
 | M12 | Attendance Management | Not started |
@@ -761,11 +761,11 @@ app/(dashboard)/events/[id]/page.tsx (waitlist tab)
 
 ### Acceptance Criteria
 
-- [ ] Join when full — status waitlisted
-- [ ] User sees waitlist position (e.g., "#3 on waitlist")
-- [ ] Admin sees ordered waitlist
-- [ ] Member cannot see other users' waitlist positions
-- [ ] Confirmed users unaffected
+- [x] Join when full — status waitlisted
+- [x] User sees waitlist position (e.g., "#3 on waitlist")
+- [x] Admin sees ordered waitlist
+- [x] Member cannot see other users' waitlist positions
+- [x] Confirmed users unaffected
 
 ### Manual Test Checklist
 
@@ -777,6 +777,12 @@ app/(dashboard)/events/[id]/page.tsx (waitlist tab)
 ### Definition of Done
 
 Waitlist assignment and display complete. FR-WAITLIST-01, FR-WAITLIST-04 met.
+
+### Implementation Notes
+
+- The existing `join_event` RPC assigns the next waitlist position while holding the event row lock.
+- The public event page renders only the authenticated caller's waitlist position.
+- Community admins see the ordered waitlist on the event management page; RLS prevents members from reading other waitlisted users.
 
 ### Suggested Git Commit Message
 

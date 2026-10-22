@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { WaitlistCard } from "@/components/domain/waitlist-card";
 import {
   joinEvent,
   type JoinResult,
@@ -55,6 +56,12 @@ export function JoinEventButton({
   }
 
   if (participation) {
+    if (
+      participation.status === "waitlisted" &&
+      typeof participation.waitlist_position === "number"
+    ) {
+      return <WaitlistCard variant="user" position={participation.waitlist_position} />;
+    }
     return (
       <p role="status" className="text-body-md text-foreground">
         {participationMessage({
@@ -66,6 +73,12 @@ export function JoinEventButton({
   }
 
   if (result?.success) {
+    if (
+      result.data.status === "waitlisted" &&
+      typeof result.data.waitlistPosition === "number"
+    ) {
+      return <WaitlistCard variant="user" position={result.data.waitlistPosition} />;
+    }
     return (
       <p role="status" className="text-body-md text-foreground">
         {participationMessage(result.data)}

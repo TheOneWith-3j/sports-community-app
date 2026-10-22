@@ -15,9 +15,9 @@ The repository is still named `sports-community-app`; RallyNook is the product b
 
 ## Current status
 
-**Overall milestone progress:** `#########-----------` **9/19 complete (47%)**
+**Overall milestone progress:** `##########----------` **10/19 complete (53%)**
 
-M0–M8 are complete. M6 Event CRUD and M7's anonymous public share page were verified in the browser. M8 implements atomic event joining, first-time community enrollment, guest return-to-event login, participation status, and duplicate/closed-event rejection. Migration `20260101000008` is applied, and all 49 hosted SQL regression assertions pass. Lint, typecheck, production build, and local route checks pass. The official `supabase test db --linked` runner remains unavailable without Docker/Podman; an end-to-end authenticated Auth0 join remains unverified. Temporary QA fixtures were removed after verification. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md).
+M0–M9 are complete. M6 Event CRUD and M7's anonymous public share page were verified in the browser. M8 implements atomic event joining, first-time community enrollment, guest return-to-event login, participation status, and duplicate/closed-event rejection. M9 renders the caller's private waitlist position and an ordered admin waitlist. Migration `20260101000008` is applied, and all 49 hosted SQL regression assertions pass. Lint, typecheck, production build, and local route checks pass. The official `supabase test db --linked` runner remains unavailable without Docker/Podman; an end-to-end authenticated Auth0 join remains unverified. Temporary QA fixtures were removed after verification. See the [implementation plan](./docs/16_IMPLEMENTATION_PLAN.md).
 
 **Auth0 setup is provisioned.** The Auth0 MCP created the Regular Web Application, saved credentials in ignored `.env.local`, and registered the local callback/logout URLs. The application display name is now RallyNook; the tenant domain is unchanged. The local Supabase Auth0 tenant config is enabled. The `RallyNook Supabase JWT Role Claim` Post-Login Action is created, built, deployed, and attached to the Login trigger (confirmed in the Auth0 Dashboard by the project owner). The app's Google sign-in route was verified to redirect to Google Accounts, and the Auth0 login page displays the Google option.
 

@@ -8,8 +8,21 @@ export type UserParticipation = {
   waitlist_position: number | null;
 };
 
+export type WaitlistedParticipant = {
+  id: string;
+  profileId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  joinedAt: string;
+  position: number;
+};
+
 export type ParticipationQueryResult =
   | { data: UserParticipation | null }
+  | { error: true };
+
+export type WaitlistQueryResult =
+  | { data: WaitlistedParticipant[] }
   | { error: true };
 
 export async function getUserParticipation(
@@ -47,4 +60,49 @@ export async function getUserParticipation(
 
   console.error("[getUserParticipation] Query returned an inactive status.");
   return { error: true };
+}
+
+export async function getWaitlistedParticipants(
+  eventId: string,
+): Promise<WaitlistQueryResult> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("event_participants")
+    .select(
+      "id, profile_id, waitlist_position, joined_at, profiles(display_name, avatar_url)",
+    )
+    .eq("event_id", eventId)
+    .eq("status", "waitlisted")
+    .order("waitlist_position", { ascending: true });
+
+  if (error) {
+    console.error("[getWaitlistedParticipants]", { code: error.code });
+    return { error: true };
+  }
+
+  const participants: WaitlistedParticipant[] = [];
+  for (const participant of data) {
+    const profile = Array.isArray(participant.profiles)
+      ? participant.profiles[0]
+      : participant.profiles;
+    if (
+      !profile ||
+      typeof participant.waitlist_position !== "number"
+    ) {
+      console.error(
+        "[getWaitlistedParticipants] Query returned an invalid participant.",
+      );
+      return { error: true };
+    }
+    participants.push({
+      id: participant.id,
+      profileId: participant.profile_id,
+      displayName: profile.display_name,
+      avatarUrl: profile.avatar_url,
+      joinedAt: participant.joined_at,
+      position: participant.waitlist_position,
+    });
+  }
+
+  return { data: participants };
 }
