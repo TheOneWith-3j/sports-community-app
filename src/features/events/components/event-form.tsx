@@ -62,7 +62,7 @@ export function EventForm({
 
   return (
     <form
-      className="space-y-6"
+      className="space-y-8"
       onSubmit={handleSubmit}
       aria-busy={pending}
       noValidate
@@ -81,7 +81,7 @@ export function EventForm({
           defaultValue={event?.title ?? ""}
           aria-invalid={Boolean(fieldErrors?.title)}
           aria-describedby={fieldErrors?.title ? "event-title-error" : undefined}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition placeholder:text-muted-foreground focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.title?.map((message) => (
           <p id="event-title-error" key={message} className="text-body-sm text-destructive">
@@ -107,7 +107,7 @@ export function EventForm({
           aria-describedby={
             fieldErrors?.description ? "event-description-error" : undefined
           }
-          className="w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition placeholder:text-muted-foreground focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.description?.map((message) => (
           <p
@@ -135,7 +135,7 @@ export function EventForm({
             aria-describedby={
               fieldErrors?.startsAt ? "event-starts-at-error" : undefined
             }
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           />
           {fieldErrors?.startsAt?.map((message) => (
             <p
@@ -162,7 +162,7 @@ export function EventForm({
             aria-describedby={
               fieldErrors?.endsAt ? "event-ends-at-error" : undefined
             }
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           />
           {fieldErrors?.endsAt?.map((message) => (
             <p
@@ -197,7 +197,7 @@ export function EventForm({
             aria-describedby={
               fieldErrors?.capacity ? "event-capacity-error" : undefined
             }
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           />
           {fieldErrors?.capacity?.map((message) => (
             <p
@@ -228,7 +228,7 @@ export function EventForm({
                 ? "event-activity-type-error"
                 : undefined
             }
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           >
             {activityTypes.map((activityType) => (
               <option key={activityType.id} value={activityType.id}>
@@ -265,7 +265,7 @@ export function EventForm({
           aria-describedby={
             fieldErrors?.location ? "event-location-error" : undefined
           }
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition placeholder:text-muted-foreground focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.location?.map((message) => (
           <p id="event-location-error" key={message} className="text-body-sm text-destructive">
@@ -286,7 +286,7 @@ export function EventForm({
             id="event-status"
             name="status"
             defaultValue="draft"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           >
             <option value="draft">Draft</option>
             <option value="published">Published</option>
@@ -312,7 +312,7 @@ export function EventForm({
       <button
         type="submit"
         disabled={pending || activityTypes.length === 0}
-        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-5 py-3 text-label font-medium text-slate-950 shadow-lg shadow-brand-primary/20 transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-5 py-3 text-label font-medium text-slate-950 shadow-lg shadow-brand-primary/20 transition-transform hover:-translate-y-0.5 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Saving…" : event ? "Save changes" : "Create event"}
       </button>
