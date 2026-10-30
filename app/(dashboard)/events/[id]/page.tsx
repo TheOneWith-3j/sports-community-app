@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, CalendarDays, ClipboardCheck, MapPin, Share2, Sparkles, UsersRound } from "lucide-react";
 
 import { CopyShareLinkButton } from "@/components/domain/copy-share-link-button";
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
@@ -104,52 +105,67 @@ export default async function EventDetailsPage({
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
-      <div className="space-y-2">
+    <section className="mx-auto max-w-4xl space-y-6">
+      <div className="flex items-center justify-between gap-4">
         <Link
           href="/events"
-          className="text-body-sm text-muted-foreground underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-body-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
+          <ArrowLeft className="h-4 w-4" />
           Back to events
         </Link>
+        <span className="rounded-full border border-brand-primary/20 bg-brand-primary/10 px-3 py-1 text-body-sm capitalize text-brand-primary">
+          {result.data.status}
+        </span>
+      </div>
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-brand-primary/10 p-6 sm:p-8">
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand-primary/10 blur-3xl" />
+        <div className="relative space-y-3">
         <p className="text-overline uppercase text-muted-foreground">
           {community.data?.name ?? "Community event"}
         </p>
         <h2 className="text-display-lg text-foreground">{result.data.title}</h2>
-        <p className="text-body-md text-muted-foreground">
+        <p className="inline-flex items-center gap-2 text-body-md text-brand-primary">
+          <Sparkles className="h-4 w-4" />
           {activityType.data?.name ?? "Community event"}
         </p>
+        </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="space-y-3">
-          <p className="text-body-md text-foreground">
-            Starts: {formatEventDate(result.data.starts_at)}
-          </p>
-          <p className="text-body-md text-foreground">
-            Ends: {formatEventDate(result.data.ends_at)}
-          </p>
-          <p className="text-body-md text-foreground">
-            Capacity: {result.data.capacity}
-          </p>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <CalendarDays className="h-5 w-5 text-brand-primary" />
+          <p className="mt-3 text-body-sm text-muted-foreground">Starts</p>
+          <p className="mt-1 text-label text-foreground">{formatEventDate(result.data.starts_at)}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <UsersRound className="h-5 w-5 text-brand-primary" />
+          <p className="mt-3 text-body-sm text-muted-foreground">Capacity</p>
+          <p className="mt-1 text-label text-foreground">{result.data.capacity} players</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <MapPin className="h-5 w-5 text-brand-primary" />
+          <p className="mt-3 text-body-sm text-muted-foreground">Location</p>
+          <p className="mt-1 truncate text-label text-foreground">{result.data.location ?? "Location to be announced"}</p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+        <div className="space-y-4">
           {result.data.location ? (
-            <p className="text-body-md text-foreground">
-              Location: {result.data.location}
-            </p>
+            <p className="inline-flex items-center gap-2 text-body-md text-foreground"><MapPin className="h-4 w-4 text-brand-primary" />{result.data.location}</p>
           ) : null}
           {result.data.description ? (
-            <p className="whitespace-pre-wrap text-body-md text-muted-foreground">
+            <p className="whitespace-pre-wrap text-body-lg text-muted-foreground">
               {result.data.description}
             </p>
           ) : null}
-          <p className="text-body-sm text-muted-foreground">
-            Status: <span className="capitalize">{result.data.status}</span>
-          </p>
+          <p className="text-body-sm text-muted-foreground">Ends {formatEventDate(result.data.ends_at)}</p>
         </div>
       </div>
 
       <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
-        <h3 className="text-heading-md text-foreground">Share this event</h3>
+        <h3 className="inline-flex items-center gap-2 text-heading-md text-foreground"><Share2 className="h-5 w-5 text-brand-primary" />Share this event</h3>
         <CopyShareLinkButton shareUrl={shareUrl} />
       </div>
 
@@ -160,8 +176,9 @@ export default async function EventDetailsPage({
       <div className="flex flex-wrap gap-3">
         <Link
           href={`/events/${result.data.id}/attendance`}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground hover:bg-muted/80"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-label text-foreground hover:bg-muted/80"
         >
+          <ClipboardCheck className="h-4 w-4" />
           Manage attendance
         </Link>
       </div>
