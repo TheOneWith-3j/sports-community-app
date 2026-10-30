@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight, CalendarDays, Sparkles, UsersRound } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
@@ -48,14 +49,17 @@ export default async function DashboardPage() {
 
   return (
     <section className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-brand-primary/10 p-6 sm:p-8">
+        <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-brand-primary/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="text-overline uppercase text-muted-foreground">
+          <p className="inline-flex items-center gap-2 text-overline uppercase text-brand-primary">
+            <Sparkles className="h-4 w-4" />
             {community.data.name}
           </p>
-          <h2 className="text-display-lg text-foreground">Dashboard</h2>
+          <h2 className="mt-2 text-display-lg text-foreground">Make plans. Show up. Play more.</h2>
           <p className="mt-2 text-body-md text-muted-foreground">
-            Your upcoming community events at a glance.
+            Everything your community needs for its next great game.
           </p>
         </div>
         <Link
@@ -64,32 +68,36 @@ export default async function DashboardPage() {
         >
           Create event
         </Link>
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <StatisticsCard
           label="Upcoming events"
           value={events.data.length}
           helper="Published events ahead"
+          icon={CalendarDays}
         />
         <StatisticsCard
           label="Confirmed spots"
           value={confirmedCount}
           helper="Across upcoming events"
+          icon={UsersRound}
         />
         <StatisticsCard
           label="Community"
           value={1}
           helper="Active community"
+          icon={Sparkles}
         />
       </div>
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h3 className="text-heading-lg text-foreground">Upcoming events</h3>
+          <h3 className="text-heading-lg text-foreground">Your next games</h3>
           <Link
             href="/events"
             className="text-body-sm text-muted-foreground underline-offset-4 hover:underline"
           >
-            View all
+            <span>View all</span><ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         {events.data.length === 0 ? (
