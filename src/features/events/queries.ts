@@ -58,7 +58,7 @@ async function includeConfirmedCount(
 
 export async function getEventsForCommunity(
   communityId: string,
-): Promise<EventQueryResult<Event[]>> {
+): Promise<EventQueryResult<EventWithCounts[]>> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("events")
@@ -74,7 +74,18 @@ export async function getEventsForCommunity(
     return { error: true };
   }
 
-  return { data };
+  const events = await Promise.all(
+    data.map((event) => includeConfirmedCount(supabase, event)),
+  );
+  if (events.some((result) => "error" in result)) {
+    return { error: true };
+  }
+
+  return {
+    data: events.flatMap((result) =>
+      "data" in result && result.data ? [result.data] : [],
+    ),
+  };
 }
 
 export async function getUpcomingEventsWithCounts(
