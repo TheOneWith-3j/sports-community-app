@@ -47,7 +47,7 @@ export function ProfileForm({
 
   return (
     <form
-      className="space-y-6"
+      className="space-y-8"
       onSubmit={handleSubmit}
       aria-busy={pending}
       noValidate
@@ -72,7 +72,7 @@ export function ProfileForm({
           aria-describedby={
             fieldErrors?.displayName ? "displayName-error" : undefined
           }
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.displayName?.map((message) => (
           <p
@@ -98,7 +98,7 @@ export function ProfileForm({
           defaultValue={profile.phone ?? ""}
           aria-invalid={Boolean(fieldErrors?.phone)}
           aria-describedby={fieldErrors?.phone ? "phone-error" : undefined}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.phone?.map((message) => (
           <p
@@ -133,7 +133,7 @@ export function ProfileForm({
           aria-describedby={
             fieldErrors?.avatarUrl ? "avatarUrl-error" : undefined
           }
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.avatarUrl?.map((message) => (
           <p
@@ -167,7 +167,7 @@ export function ProfileForm({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-5 py-3 text-label font-medium text-slate-950 shadow-lg shadow-brand-primary/20 transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-5 py-3 text-label font-medium text-slate-950 shadow-lg shadow-brand-primary/20 transition-transform hover:-translate-y-0.5 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Saving…" : "Save profile"}
       </button>

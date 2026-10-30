@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Sparkles } from "lucide-react";
 
 import { ProfileForm } from "@/features/auth/components/profile-form";
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
@@ -32,9 +33,10 @@ export default async function OnboardingPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl items-center px-4 py-12 sm:px-6">
-      <section className="w-full space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <section className="w-full space-y-6 rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <div>
-          <p className="text-overline uppercase text-muted-foreground">
+          <p className="inline-flex items-center gap-2 text-overline uppercase text-brand-primary">
+            <Sparkles className="h-4 w-4" />
             Welcome to RallyNook
           </p>
           <h1 className="mt-2 text-display-md text-foreground">

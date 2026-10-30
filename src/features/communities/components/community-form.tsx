@@ -55,7 +55,7 @@ export function CommunityForm({
 
   return (
     <form
-      className="space-y-6"
+      className="space-y-8"
       onSubmit={handleSubmit}
       aria-busy={pending}
       noValidate
@@ -82,7 +82,7 @@ export function CommunityForm({
           }}
           aria-invalid={Boolean(fieldErrors?.name)}
           aria-describedby={fieldErrors?.name ? "community-name-error" : undefined}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.name?.map((message) => (
           <p
@@ -114,7 +114,7 @@ export function CommunityForm({
           }}
           aria-invalid={Boolean(fieldErrors?.slug)}
           aria-describedby={fieldErrors?.slug ? "community-slug-error" : undefined}
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.slug?.map((message) => (
           <p
@@ -147,7 +147,7 @@ export function CommunityForm({
           aria-describedby={
             fieldErrors?.description ? "community-description-error" : undefined
           }
-          className="w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {fieldErrors?.description?.map((message) => (
           <p
@@ -176,7 +176,7 @@ export function CommunityForm({
           aria-describedby={
             fieldErrors?.activityTypeId ? "community-activity-type-error" : undefined
           }
-          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary"
+          className="w-full rounded-xl border border-border bg-background px-4 py-3 text-body-md text-foreground outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         >
           <option value="" disabled>
             Select an activity
@@ -216,7 +216,7 @@ export function CommunityForm({
       <button
         type="submit"
         disabled={pending || activityTypes.length === 0}
-        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-5 py-3 text-label font-medium text-slate-950 shadow-lg shadow-brand-primary/20 transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-brand-gradient-from to-brand-gradient-to px-5 py-3 text-label font-medium text-slate-950 shadow-lg shadow-brand-primary/20 transition-transform hover:-translate-y-0.5 hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending
           ? "Saving…"

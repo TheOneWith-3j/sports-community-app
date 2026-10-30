@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowLeft, CalendarPlus } from "lucide-react";
 
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
 import { getCurrentProfile } from "@/features/auth/queries";
@@ -42,21 +43,26 @@ export default async function NewEventPage() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="mx-auto max-w-3xl space-y-8">
       <div className="space-y-2">
         <Link
           href="/events"
-          className="text-body-sm text-muted-foreground underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-body-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
+          <ArrowLeft className="h-4 w-4" />
           Back to events
         </Link>
+        <p className="inline-flex items-center gap-2 text-overline uppercase text-brand-primary">
+          <CalendarPlus className="h-4 w-4" />
+          New community event
+        </p>
         <h2 className="text-display-lg text-foreground">Create an event</h2>
         <p className="text-body-md text-muted-foreground">
           Add the details members need to join your community event.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <EventForm
           activityTypes={activityTypes.data}
           communityId={community.data.id}

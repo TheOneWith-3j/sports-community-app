@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Sparkles } from "lucide-react";
 
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
 import { getCurrentProfile } from "@/features/auth/queries";
@@ -44,7 +45,8 @@ export default async function CommunitySetupPage() {
   return (
     <section className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-2">
-        <p className="text-overline uppercase text-muted-foreground">
+        <p className="inline-flex items-center gap-2 text-overline uppercase text-brand-primary">
+          <Sparkles className="h-4 w-4" />
           Community setup
         </p>
         <h2 className="text-display-lg text-foreground">
@@ -64,7 +66,7 @@ export default async function CommunitySetupPage() {
         </p>
       ) : null}
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <CommunityForm activityTypes={activityTypes.data} />
       </div>
     </section>

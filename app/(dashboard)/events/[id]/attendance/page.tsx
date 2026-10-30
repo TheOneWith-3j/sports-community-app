@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, ClipboardCheck } from "lucide-react";
 
 import { AttendanceCard } from "@/components/domain/attendance-card";
 import { ProfileResolutionError } from "@/features/auth/components/profile-resolution-error";
@@ -47,13 +48,15 @@ export default async function AttendancePage({
   );
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
-      <Link href={`/events/${event.data.id}`} className="text-body-sm text-muted-foreground underline-offset-4 hover:underline">
+    <section className="mx-auto max-w-4xl space-y-8">
+      <Link href={`/events/${event.data.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-body-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" />
         Back to event
       </Link>
-      <div className="space-y-2">
-        <p className="text-overline uppercase text-muted-foreground">Attendance</p>
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-brand-primary/10 p-6 sm:p-8">
+        <p className="inline-flex items-center gap-2 text-overline uppercase text-brand-primary"><ClipboardCheck className="h-4 w-4" />Attendance</p>
         <h2 className="text-display-lg text-foreground">{event.data.title}</h2>
+        <p className="mt-2 text-body-md text-muted-foreground">Keep the record accurate so your community can plan with confidence.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {Object.entries(counts).map(([label, count]) => (
